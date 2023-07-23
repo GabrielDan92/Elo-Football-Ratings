@@ -174,8 +174,6 @@ class EloRatings:
               f"{away_team} [Elo: {self.elo_ratings[away_team]}]")
 
     def measure_win_perc(self, win_prob, home_t, away_t, home_s, away_s):
-        correct_pred = 0
-        wrong_pred = 0
         corr_dict = {}
         wrong_dict = {}
 
