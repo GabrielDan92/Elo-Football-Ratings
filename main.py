@@ -13,6 +13,8 @@ class EloRatings:
         self.away_team = []
         self.home_score = []
         self.away_score = []
+        self.correct_pred = 0
+        self.wrong_pred = 0
 
         final_year = datetime.date.today().year
         export_path = f"/Users/{user}/Desktop/Stuff/Football Spark/{start_year}-{final_year}-Romania.csv"
@@ -128,6 +130,11 @@ class EloRatings:
             if matches_played[home_t] >= 30 and matches_played[away_t] >= 30:
                 # probability of winning
                 win_prob = 1 / (1 + pow(10, (elo_ratings[away_t] - elo_ratings[home_t]) / 600))
+                self.measure_win_perc(win_prob=win_prob,
+                                      home_t=home_t,
+                                      away_t=away_t,
+                                      home_s=home_s,
+                                      away_s=away_s)
 
                 # prevent rating inflation
                 if elo_ratings[home_t] < 1000:
@@ -174,22 +181,27 @@ class EloRatings:
 
         if win_prob >= 0.7 and home_s > away_s:
             corr_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
-            correct_pred += 1
+            self.correct_pred += 1
         elif win_prob >= 0.7 and (home_s < away_s or home_s == away_s):
             wrong_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
-            wrong_pred += 1
+            self.wrong_pred += 1
 
         if win_prob <= 0.3 and home_s < away_s:
             corr_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
-            correct_pred += 1
+            self.correct_pred += 1
         elif win_prob <= 0.3 and (home_s > away_s or home_s == away_s):
             wrong_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
-            wrong_pred += 1
+            self.wrong_pred += 1
+
+    def see_win_perc(self):
+        print(f"Correct predictions: {self.correct_pred}, "
+              f"Wrong predictions: {self.wrong_pred}. "
+              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
 
 
 if __name__ == '__main__':
-    # e = EloRatings(extract_historic_data=True)
-    e = EloRatings()
+    # e = EloRatings(extract_historic_data=True, start_year=2017)
+    e = EloRatings(start_year=2019)
     e.query_interface(home_team="CFR Cluj",
                       away_team="FCSB")
     e.query_interface(home_team="FCSB",
@@ -198,3 +210,5 @@ if __name__ == '__main__':
                       away_team="Dinamo")
     e.query_interface(home_team="Farul Constanța",
                       away_team="Voluntari")
+
+    e.see_win_perc()
