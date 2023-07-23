@@ -129,7 +129,9 @@ class EloRatings:
 
             if matches_played[home_t] >= 30 and matches_played[away_t] >= 30:
                 # probability of winning
+                # win_prob = 1 / (1 + pow(10, (elo_ratings[away_t] - (elo_ratings[home_t] * 1.12)) / 600))
                 win_prob = 1 / (1 + pow(10, (elo_ratings[away_t] - elo_ratings[home_t]) / 600))
+
                 self.measure_win_perc(win_prob=win_prob,
                                       home_t=home_t,
                                       away_t=away_t,
@@ -177,10 +179,10 @@ class EloRatings:
         corr_dict = {}
         wrong_dict = {}
 
-        if win_prob >= 0.7 and home_s > away_s:
+        if win_prob >= 0.65 and home_s > away_s:
             corr_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
             self.correct_pred += 1
-        elif win_prob >= 0.7 and (home_s < away_s or home_s == away_s):
+        elif win_prob >= 0.65 and (home_s < away_s or home_s == away_s):
             wrong_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
             self.wrong_pred += 1
 
@@ -191,6 +193,11 @@ class EloRatings:
             wrong_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
             self.wrong_pred += 1
 
+        # if 0.45 <= win_prob <= 0.55 and home_s == away_s:
+        #     self.correct_pred += 1
+        # elif 0.45 <= win_prob <= 0.55 and home_s != away_s:
+        #     self.wrong_pred += 1
+
     def see_win_perc(self):
         print(f"Correct predictions: {self.correct_pred}, "
               f"Wrong predictions: {self.wrong_pred}. "
@@ -200,13 +207,34 @@ class EloRatings:
 if __name__ == '__main__':
     # e = EloRatings(extract_historic_data=True, start_year=2017)
     e = EloRatings(start_year=2019)
-    e.query_interface(home_team="CFR Cluj",
-                      away_team="FCSB")
-    e.query_interface(home_team="FCSB",
-                      away_team="CFR Cluj")
-    e.query_interface(home_team="FCSB",
-                      away_team="Dinamo")
-    e.query_interface(home_team="Farul Constanța",
-                      away_team="Voluntari")
+    e.query_interface(home_team="Poli Iași",
+                      away_team="Hermannstadt")
+    e.query_interface(home_team="Universitatea Cluj",
+                      away_team="Rapid București")
+    # e.query_interface(home_team="FCSB",
+    #                   away_team="CFR Cluj")
+    # e.query_interface(home_team="FCSB",
+    #                   away_team="Dinamo")
+    # e.query_interface(home_team="Farul Constanța",
+    #                   away_team="Voluntari")
 
     e.see_win_perc()
+
+
+"""
+TODO: home advantage
+	    win	lose	games	win_perc	adv
+home	525	700	    1225	43%	        12%
+away	378	847	    1225	31%	        -12%
+
+
+w home advantage:
+Poli Iași [Elo: 1182] has a 41% chance to win against Hermannstadt [Elo: 1280]
+Universitatea Cluj [Elo: 1512] has a 51% chance to win against Rapid București [Elo: 1499]
+Correct predictions: 241, Wrong predictions: 206. Accurate predictions: 54%
+
+w/out home advantage:
+Poli Iași [Elo: 1355] has a 35% chance to win against Hermannstadt [Elo: 1520]
+Universitatea Cluj [Elo: 1519] has a 46% chance to win against Rapid București [Elo: 1566]
+Correct predictions: 64, Wrong predictions: 22. Accurate predictions: 74%
+"""
