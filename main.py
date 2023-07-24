@@ -6,6 +6,7 @@ import datetime
 
 class EloRatings:
     def __init__(self,
+                 comp="RO-Liga-1",
                  start_year=2019,
                  extract_historic_data=False):
         self.date = []
@@ -13,50 +14,81 @@ class EloRatings:
         self.away_team = []
         self.home_score = []
         self.away_score = []
+        self.prediction = []
+        self.elo_home_bef = []
+        self.elo_home_aft = []
+        self.elo_away_bef = []
+        self.elo_away_aft = []
         self.correct_pred = 0
         self.wrong_pred = 0
+        self.comp_mapping = {
+            "RO-Liga-1": {
+                "suffix": "Liga-I-Scores-and-Fixtures",
+                "comp_id": 47,
+                "historic_col": 2,
+                "current_col": 1,
+                "final_year": datetime.date.today().year
+            },
+            "UK-Premier-League": {
+                "suffix": "Premier-League-Scores-and-Fixtures",
+                "comp_id": 9,
+                "historic_col": 1,
+                "current_col": 1,
+                "final_year": datetime.date.today().year - 1
+            }
+        }
 
-        final_year = datetime.date.today().year
-        export_path = f"/Users/{user}/Desktop/Stuff/Football Spark/{start_year}-{final_year}-Romania.csv"
+        export_path = f"/Users/{user}/Desktop/Stuff/Football Spark/{start_year}-{self.comp_mapping[comp]['final_year']}-{comp}.csv"
         main_link = "https://fbref.com/en/comps/"
 
         if extract_historic_data:
             self.extract_historic_data(export_path=export_path,
                                        start_year=start_year,
-                                       final_year=final_year,
-                                       main_link=main_link)
+                                       final_year=self.comp_mapping[comp]["final_year"],
+                                       competition_id=self.comp_mapping[comp]["comp_id"],
+                                       suffix=self.comp_mapping[comp]["suffix"],
+                                       main_link=main_link,
+                                       comp=comp)
         else:
             self.load_historic_data(export_path=export_path)
 
-        self.extract_current_season_data(main_link=main_link)
+        self.extract_current_season_data(main_link=main_link,
+                                         competition_id=self.comp_mapping[comp]["comp_id"],
+                                         suffix=self.comp_mapping[comp]["suffix"],
+                                         comp=comp)
 
         self.elo_ratings = self.calculate_elo()
+
 
     def extract_historic_data(self,
                               export_path,
                               start_year,
                               final_year,
                               main_link,
-                              competition_id=47,
-                              suffix="Liga-I-Scores-and-Fixtures"):
+                              competition_id,
+                              suffix,
+                              comp):
 
         while start_year < final_year:
             url = f"{main_link}/{competition_id}/{start_year}-{start_year+1}/schedule/{start_year}-{start_year+1}-{suffix}"
             html = requests.get(url=url)
             print(f"Accessing {url}...")
-            self.parse_html(html, 2)
+            self.parse_html(html, self.comp_mapping[comp]["historic_col"])
             start_year += 1
 
         self.export_historic_data(export_path)
 
+
     def extract_current_season_data(self,
                                     main_link,
-                                    competition_id=47,
-                                    suffix="Liga-I-Scores-and-Fixtures"):
+                                    competition_id,
+                                    suffix,
+                                    comp):
         current_season = f"{main_link}/{competition_id}/schedule/{suffix}"
         html = requests.get(url=current_season)
         print(f"Accessing {current_season}...")
-        self.parse_html(html, 1)
+        self.parse_html(html, self.comp_mapping[comp]["current_col"])
+
 
     def parse_html(self, html, col):
         soup = BeautifulSoup(html.text, "html.parser")
@@ -73,6 +105,7 @@ class EloRatings:
                 # print(str(e))
                 continue
 
+
     def export_historic_data(self, export_path):
         df = pd.DataFrame(
             {"date": self.date,
@@ -83,6 +116,7 @@ class EloRatings:
 
         df.to_csv(export_path, encoding="utf-8-sig")
 
+
     def load_historic_data(self, export_path):
         data = pd.read_csv(export_path)
 
@@ -91,6 +125,7 @@ class EloRatings:
         self.away_team = data["away_team"].tolist()
         self.home_score = data["home_score"].tolist()
         self.away_score = data["away_score"].tolist()
+
 
     def calculate_elo(self):
         counter = 0
@@ -117,6 +152,11 @@ class EloRatings:
                 home_s = int(self.home_score[counter])
                 away_s = int(self.away_score[counter])
             except Exception as e:
+                self.prediction.append(None)
+                self.elo_home_bef.append(None)
+                self.elo_home_aft.append(None)
+                self.elo_away_bef.append(None)
+                self.elo_away_aft.append(None)
                 # print(str(e))
                 counter += 1
                 continue
@@ -131,6 +171,10 @@ class EloRatings:
                 # probability of winning
                 # win_prob = 1 / (1 + pow(10, (elo_ratings[away_t] - (elo_ratings[home_t] * 1.12)) / 600))
                 win_prob = 1 / (1 + pow(10, (elo_ratings[away_t] - elo_ratings[home_t]) / 600))
+
+                self.prediction.append(win_prob)
+                self.elo_home_bef.append(elo_ratings[home_t])
+                self.elo_away_bef.append(elo_ratings[away_t])
 
                 self.measure_win_perc(win_prob=win_prob,
                                       home_t=home_t,
@@ -159,12 +203,19 @@ class EloRatings:
 
                 if home_s < away_s:
                     elo_ratings[home_t] = round(elo_ratings[home_t] + k_home * (0 - win_prob))
-                    elo_ratings[away_t] = round(elo_ratings[away_t] + (k_away * 1.3) * (1 - win_prob))
+                    # elo_ratings[away_t] = round(elo_ratings[away_t] + (k_away * 1.3) * (1 - win_prob))
+                    elo_ratings[away_t] = round(elo_ratings[away_t] + k_away * (1 - win_prob))
 
                 if home_s == away_s:
                     elo_ratings[home_t] = round(elo_ratings[home_t] + k_home * (0.5 - win_prob))
                     elo_ratings[away_t] = round(elo_ratings[away_t] + k_away * (0.5 - win_prob))
+            else:
+                self.prediction.append(None)
+                self.elo_home_bef.append(None)
+                self.elo_away_bef.append(None)
 
+            self.elo_home_aft.append(elo_ratings[home_t])
+            self.elo_away_aft.append(elo_ratings[away_t])
             counter += 1
 
         return elo_ratings
@@ -179,10 +230,10 @@ class EloRatings:
         corr_dict = {}
         wrong_dict = {}
 
-        if win_prob >= 0.65 and home_s > away_s:
+        if win_prob >= 0.60 and home_s > away_s:
             corr_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
             self.correct_pred += 1
-        elif win_prob >= 0.65 and (home_s < away_s or home_s == away_s):
+        elif win_prob >= 0.60 and (home_s < away_s or home_s == away_s):
             wrong_dict[f"{home_t} vs {away_t} [win prob: {win_prob}]"] = f"{home_s}:{away_s}"
             self.wrong_pred += 1
 
@@ -203,14 +254,30 @@ class EloRatings:
               f"Wrong predictions: {self.wrong_pred}. "
               f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
 
+    def export_results(self):
+        df = pd.DataFrame(
+            {"date": self.date,
+             "home_team": self.home_team,
+             "away_team": self.away_team,
+             "home_score": self.home_score,
+             "away_score": self.away_score,
+             "prediction": self.prediction,
+             "elo_home_bef": self.elo_home_bef,
+             "elo_home_aft": self.elo_home_aft,
+             "elo_away_bef": self.elo_away_bef,
+             "elo_away_aft": self.elo_away_aft,
+             })
+        
+        df.to_csv("/Users/{user}/Desktop/Stuff/Football Spark/output.csv", encoding="utf-8-sig")
+
 
 if __name__ == '__main__':
-    # e = EloRatings(extract_historic_data=True, start_year=2017)
+    # e = EloRatings(extract_historic_data=True, start_year=2019)
     e = EloRatings(start_year=2019)
-    e.query_interface(home_team="Poli Iași",
-                      away_team="Hermannstadt")
-    e.query_interface(home_team="Universitatea Cluj",
-                      away_team="Rapid București")
+    e.query_interface(home_team="Botoșani",
+                      away_team="Petrolul Ploiești")
+    e.query_interface(home_team="CS U Craiova",
+                      away_team="Oțelul Galați")
     # e.query_interface(home_team="FCSB",
     #                   away_team="CFR Cluj")
     # e.query_interface(home_team="FCSB",
@@ -218,6 +285,7 @@ if __name__ == '__main__':
     # e.query_interface(home_team="Farul Constanța",
     #                   away_team="Voluntari")
 
+    # e.export_results()
     e.see_win_perc()
 
 
@@ -226,15 +294,4 @@ TODO: home advantage
 	    win	lose	games	win_perc	adv
 home	525	700	    1225	43%	        12%
 away	378	847	    1225	31%	        -12%
-
-
-w home advantage:
-Poli Iași [Elo: 1182] has a 41% chance to win against Hermannstadt [Elo: 1280]
-Universitatea Cluj [Elo: 1512] has a 51% chance to win against Rapid București [Elo: 1499]
-Correct predictions: 241, Wrong predictions: 206. Accurate predictions: 54%
-
-w/out home advantage:
-Poli Iași [Elo: 1355] has a 35% chance to win against Hermannstadt [Elo: 1520]
-Universitatea Cluj [Elo: 1519] has a 46% chance to win against Rapid București [Elo: 1566]
-Correct predictions: 64, Wrong predictions: 22. Accurate predictions: 74%
 """
