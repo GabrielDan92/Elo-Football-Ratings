@@ -41,8 +41,7 @@ class ExtractMatches:
         }
 
         self.main_link = "https://fbref.com/en/comps/"
-        self.export_path = "/Users/{user}/Desktop/Stuff/Football Spark/" \
-                           f"{start_year}-{datetime.date.today().year}-{comp}.csv"
+        self.export_path = f"{start_year}-{datetime.date.today().year}-{comp}.csv"
 
         if extract_historic_data:
             self.extract_historic_data(
@@ -116,7 +115,7 @@ class ExtractMatches:
                         "home_team": match.find_all("td")[columns[1]].text,
                         "away_team": match.find_all("td")[columns[3]].text,
                         "home_score": score.replace("–", "-")[0],
-                        "away_score": score.replace("–", "-")[2],
+                        "away_score": score.replace("–", "-")[2]
                     }
                 else:
                     if date and hour:
@@ -201,6 +200,7 @@ class EloRatings:
             if away_t not in elo["ratings"]:
                 elo["ratings"][away_t] = 1500
 
+            # calculate the probability for teams w/ more than 30 played matches
             if elo["teams"][home_t] >= 30 and elo["teams"][away_t] >= 30:
                 win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
                 
@@ -224,30 +224,20 @@ class EloRatings:
                     k_away = 20
                 if elo["ratings"][away_t] > 1500:
                     k_away = 10
-
+                
+                # recalculate the rating based on the match result
                 if home_s > away_s:
-                    elo["ratings"][home_t] = round(
-                        elo["ratings"][home_t] + k_home * (1 - win_prob)
-                    )
-                    elo["ratings"][away_t] = round(
-                        elo["ratings"][away_t] + k_away * (0 - win_prob)
-                    )
-
+                    home_weight = 1
+                    away_weight = 0
                 if home_s < away_s:
-                    elo["ratings"][home_t] = round(
-                        elo["ratings"][home_t] + k_home * (0 - win_prob)
-                    )
-                    elo["ratings"][away_t] = round(
-                        elo["ratings"][away_t] + k_away * (1 - win_prob)
-                    )
-
+                    home_weight = 0
+                    away_weight = 1
                 if home_s == away_s:
-                    elo["ratings"][home_t] = round(
-                        elo["ratings"][home_t] + k_home * (0.5 - win_prob)
-                    )
-                    elo["ratings"][away_t] = round(
-                        elo["ratings"][away_t] + k_away * (0.5 - win_prob)
-                    )
+                    home_weight = 0.5
+                    away_weight = 0.5
+
+                elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
+                elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - win_prob))
 
                 self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
                 self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
@@ -312,7 +302,4 @@ class EloRatings:
             }
         )
 
-        df.to_csv(
-            "/Users/{user}/Desktop/Stuff/Football Spark/output.csv",
-            encoding="utf-8-sig",
-        )
+        df.to_csv("output.csv",encoding="utf-8-sig")
