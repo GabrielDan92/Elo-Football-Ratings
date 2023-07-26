@@ -151,10 +151,10 @@ class ExtractMatches:
                 "away_score": away_score[i],
             }
             
-    def get_matches(self):
+    def get_played_matches(self):
         return self.matches
     
-    def get_future_matches(self):
+    def get_scheduled_matches(self):
         return self.future_matches
 
 
@@ -302,4 +302,4 @@ class EloRatings:
             }
         )
 
-        df.to_csv("output.csv",encoding="utf-8-sig")
+        df.to_csv("output.csv", encoding="utf-8-sig")
