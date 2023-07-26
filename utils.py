@@ -5,77 +5,72 @@ import datetime
 
 
 class ExtractMatches:
+
     def __init__(self, comp="RO-Liga-1", start_year=2019, extract_historic_data=False):
         self.matches = {}
-
+        self.future_matches = {}
         self.map = {
             "RO-Liga-1": {
                 "suffix": "Liga-I-Scores-and-Fixtures",
                 "comp_id": 47,
                 "date_col": 1,
+                "hour_col": 2,
                 "home_team_col": 3,
                 "score_col": 4,
                 "away_team_col": 5,
                 "date_col_h": 2,
+                "hour_col_h": 3,
                 "home_team_col_h": 4,
                 "score_col_h": 5,
-                "away_team_col_h": 6,
-                "final_year": datetime.date.today().year,
+                "away_team_col_h": 6
             },
             "UK-Premier-League": {
                 "suffix": "Premier-League-Scores-and-Fixtures",
                 "comp_id": 9,
                 "date_col": 1,
+                "hour_col": 2,
                 "home_team_col": 3,
                 "score_col": 5,
                 "away_team_col": 7,
                 "date_col_h": 1,
+                "hour_col_h": 2,
                 "home_team_col_h": 3,
                 "score_col_h": 5,
-                "away_team_col_h": 7,
-                "final_year": datetime.date.today().year - 1,
+                "away_team_col_h": 7
             },
         }
 
-        export_path = f"/Users/{user}/Desktop/Stuff/Football Spark/{start_year}-{self.map[comp]['final_year']}-{comp}.csv"
-        main_link = "https://fbref.com/en/comps/"
+        self.main_link = "https://fbref.com/en/comps/"
+        self.export_path = "/Users/{user}/Desktop/Stuff/Football Spark/" \
+                           f"{start_year}-{datetime.date.today().year}-{comp}.csv"
 
         if extract_historic_data:
             self.extract_historic_data(
-                export_path=export_path,
                 start_year=start_year,
-                final_year=self.map[comp]["final_year"],
                 competition_id=self.map[comp]["comp_id"],
                 suffix=self.map[comp]["suffix"],
-                main_link=main_link,
-                comp=comp,
+                comp=comp
             )
         else:
-            self.load_historic_data(export_path=export_path)
+            self.load_historic_data()
 
         self.extract_current_season_data(
-            main_link=main_link,
             competition_id=self.map[comp]["comp_id"],
             suffix=self.map[comp]["suffix"],
-            comp=comp,
+            comp=comp
         )
-
-    def get_matches(self):
-        return self.matches
 
     def extract_historic_data(
         self,
-        export_path,
         start_year,
-        final_year,
-        main_link,
         competition_id,
         suffix,
-        comp,
+        comp
     ):
 
-        while start_year < final_year:
-            url = f"{main_link}/{competition_id}/{start_year}-{start_year + 1}/schedule/{start_year}-{start_year + 1}-{suffix}"
+        while start_year < datetime.date.today().year:
+            url = f"{self.main_link}/{competition_id}/{start_year}-{start_year + 1}" \
+                  f"/schedule/{start_year}-{start_year + 1}-{suffix}"
             print(f"Accessing {url}...")
 
             columns = [
@@ -83,15 +78,16 @@ class ExtractMatches:
                 self.map[comp]["home_team_col_h"],
                 self.map[comp]["score_col_h"],
                 self.map[comp]["away_team_col_h"],
+                self.map[comp]["hour_col_h"]
             ]
 
             self.parse_html(requests.get(url=url), columns)
             start_year += 1
 
-        self.export_historic_data(export_path)
+        self.export_historic_data()
 
-    def extract_current_season_data(self, main_link, competition_id, suffix, comp):
-        current_season = f"{main_link}/{competition_id}/schedule/{suffix}"
+    def extract_current_season_data(self, competition_id, suffix, comp):
+        current_season = f"{self.main_link}/{competition_id}/schedule/{suffix}"
         print(f"Accessing {current_season}...")
 
         columns = [
@@ -99,6 +95,7 @@ class ExtractMatches:
             self.map[comp]["home_team_col"],
             self.map[comp]["score_col"],
             self.map[comp]["away_team_col"],
+            self.map[comp]["hour_col"]
         ]
 
         self.parse_html(requests.get(url=current_season), columns)
@@ -106,23 +103,28 @@ class ExtractMatches:
     def parse_html(self, html, columns):
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
-        counter = 0
 
         for match in matches:
             try:
-                if match.find_all("td")[columns[2]].text != "":
-                    key = f'{match.find_all("td")[columns[0]].text}_({counter})'
+                date = match.find_all("td")[columns[0]].text
+                hour = match.find_all("td")[columns[4]].text
+                score = match.find_all("td")[columns[2]].text
+
+                if score:
+                    key = f'{date} {hour}'
                     self.matches[key] = {
                         "home_team": match.find_all("td")[columns[1]].text,
                         "away_team": match.find_all("td")[columns[3]].text,
-                        "home_score": match.find_all("td")[columns[2]].text.replace("–", "-")[0],
-                        "away_score": match.find_all("td")[columns[2]].text.replace("–", "-")[2],
+                        "home_score": score.replace("–", "-")[0],
+                        "away_score": score.replace("–", "-")[2],
                     }
-                    counter += 1
+                else:
+                    if date and hour:
+                        self.future_matches[match.find_all("td")[columns[1]].text] = match.find_all("td")[columns[3]].text
             except:
                 continue
 
-    def export_historic_data(self, export_path):
+    def export_historic_data(self):
         pd.DataFrame(
             {
                 "date": self.matches.keys(),
@@ -131,10 +133,10 @@ class ExtractMatches:
                 "home_score": [v["home_score"] for v in self.matches.values()],
                 "away_score": [v["away_score"] for v in self.matches.values()],
             }
-        ).to_csv(export_path, encoding="utf-8-sig")
+        ).to_csv(self.export_path, encoding="utf-8-sig")
 
-    def load_historic_data(self, export_path):
-        data = pd.read_csv(export_path)
+    def load_historic_data(self):
+        data = pd.read_csv(self.export_path)
 
         date = data["date"].tolist()
         home_team = data["home_team"].tolist()
@@ -149,6 +151,12 @@ class ExtractMatches:
                 "home_score": home_score[i],
                 "away_score": away_score[i],
             }
+            
+    def get_matches(self):
+        return self.matches
+    
+    def get_future_matches(self):
+        return self.future_matches
 
 
 class EloRatings:
