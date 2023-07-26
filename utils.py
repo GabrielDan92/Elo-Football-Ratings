@@ -43,33 +43,20 @@ class ExtractMatches:
         self.main_link = "https://fbref.com/en/comps/"
         self.export_path = f"{start_year}-{datetime.date.today().year}-{comp}.csv"
 
+        # extract or load played matches up until previous season
         if extract_historic_data:
-            self.extract_historic_data(
-                start_year=start_year,
-                competition_id=self.map[comp]["comp_id"],
-                suffix=self.map[comp]["suffix"],
-                comp=comp
-            )
+            self.extract_historic_data(start_year=start_year, comp=comp)
         else:
             self.load_historic_data()
 
-        self.extract_current_season_data(
-            competition_id=self.map[comp]["comp_id"],
-            suffix=self.map[comp]["suffix"],
-            comp=comp
-        )
+        # extract current season played and scheduled matches
+        self.extract_current_season_data(comp=comp)
 
-    def extract_historic_data(
-        self,
-        start_year,
-        competition_id,
-        suffix,
-        comp
-    ):
+    def extract_historic_data(self, start_year, comp):
 
         while start_year < datetime.date.today().year:
-            url = f"{self.main_link}/{competition_id}/{start_year}-{start_year + 1}" \
-                  f"/schedule/{start_year}-{start_year + 1}-{suffix}"
+            url = f"{self.main_link}/{self.map[comp]['comp_id']}/{start_year}-{start_year + 1}" \
+                  f"/schedule/{start_year}-{start_year + 1}-{self.map[comp]['suffix']}"
             print(f"Accessing {url}...")
 
             columns = [
@@ -79,14 +66,13 @@ class ExtractMatches:
                 self.map[comp]["away_team_col_h"],
                 self.map[comp]["hour_col_h"]
             ]
-
             self.parse_html(requests.get(url=url), columns)
             start_year += 1
 
         self.export_historic_data()
 
-    def extract_current_season_data(self, competition_id, suffix, comp):
-        current_season = f"{self.main_link}/{competition_id}/schedule/{suffix}"
+    def extract_current_season_data(self, comp):
+        current_season = f"{self.main_link}/{self.map[comp]['comp_id']}/schedule/{self.map[comp]['suffix']}"
         print(f"Accessing {current_season}...")
 
         columns = [
