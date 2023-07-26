@@ -172,7 +172,7 @@ class EloRatings:
             home_t = self.matches[k]["home_team"]
             away_t = self.matches[k]["away_team"]
 
-            # keep track of matches played
+            # keep track of played matches
             if home_t not in elo["teams"]:
                 elo["teams"][home_t] = 1
             else:
