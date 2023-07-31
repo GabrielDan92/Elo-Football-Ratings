@@ -5,7 +5,6 @@ import datetime
 
 
 class ExtractMatches:
-
     def __init__(self, comp="RO-Liga-1", start_year=2019, extract_historic_data=False):
         self.matches = {}
         self.future_matches = {}
