@@ -5,7 +5,7 @@ import datetime
 
 
 class ExtractMatches:
-    def __init__(self, comp="RO-Liga-1", start_year=2019, extract_historic_data=False):
+    def __init__(self, comp, start_year, extract_historic_data=False):
         self.matches = {}
         self.future_matches = {}
         self.map = {
@@ -29,13 +29,41 @@ class ExtractMatches:
                 "date_col": 1,
                 "hour_col": 2,
                 "home_team_col": 3,
-                "score_col": 5,
-                "away_team_col": 7,
+                "score_col": 4,
+                "away_team_col": 5,
                 "date_col_h": 1,
                 "hour_col_h": 2,
                 "home_team_col_h": 3,
                 "score_col_h": 5,
                 "away_team_col_h": 7
+            },
+            "Spain-La-Liga": {
+                "suffix": "La-Liga-Scores-and-Fixtures",
+                "comp_id": 12,
+                "date_col": 1,
+                "hour_col": 2,
+                "home_team_col": 3,
+                "score_col": 4,
+                "away_team_col": 5,
+                "date_col_h": 1,
+                "hour_col_h": 2,
+                "home_team_col_h": 3,
+                "score_col_h": 5,
+                "away_team_col_h": 7
+            },
+            "DE-Bundesliga": {
+                "suffix": "Bundesliga-Scores-and-Fixtures",
+                "comp_id": 20,
+                "date_col": 1,
+                "hour_col": 2,
+                "home_team_col": 3,
+                "score_col": 4,
+                "away_team_col": 5,
+                "date_col_h": 2,
+                "hour_col_h": 3,
+                "home_team_col_h": 4,
+                "score_col_h": 6,
+                "away_team_col_h": 8
             },
         }
         self.main_link = f"https://fbref.com/en/comps/{self.map[comp]['comp_id']}"
@@ -262,12 +290,13 @@ class EloRatings:
         elif win_prob <= 0.3 and (home_s > away_s or home_s == away_s):
             self.wrong_pred += 1
 
-    def see_win_perc(self):
-        print(f"Correct predictions: {self.correct_pred}, "
+    def see_win_perc(self, competition_name):
+        print(f"For {competition_name}:\n"
+              f"Correct predictions: {self.correct_pred}, "
               f"Wrong predictions: {self.wrong_pred}. "
-              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
+              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%\n")
 
-    def export_results(self):
+    def export_results(self, competition_name):
         df = pd.DataFrame(
             {
                 "date": self.matches.keys(),
@@ -283,4 +312,4 @@ class EloRatings:
             }
         )
 
-        df.to_csv("output.csv", encoding="utf-8-sig")
+        df.to_csv(f"{competition_name}.csv", encoding="utf-8-sig")
