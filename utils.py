@@ -5,69 +5,19 @@ import datetime
 
 
 class ExtractMatches:
-    def __init__(self, comp, start_year, extract_historic_data=False):
+    def __init__(self, 
+                 comp, 
+                 start_year, 
+                 confidence=0.6,
+                 future_predictions=True,
+                 see_win_perc=False,
+                 extract_historic_data=False, 
+                 export_results=False):
         self.matches = {}
         self.future_matches = {}
-        self.map = {
-            "RO-Liga-1": {
-                "suffix": "Liga-I-Scores-and-Fixtures",
-                "comp_id": 47,
-                "date_col": 1,
-                "hour_col": 2,
-                "home_team_col": 3,
-                "score_col": 4,
-                "away_team_col": 5,
-                "date_col_h": 2,
-                "hour_col_h": 3,
-                "home_team_col_h": 4,
-                "score_col_h": 5,
-                "away_team_col_h": 6
-            },
-            "UK-Premier-League": {
-                "suffix": "Premier-League-Scores-and-Fixtures",
-                "comp_id": 9,
-                "date_col": 1,
-                "hour_col": 2,
-                "home_team_col": 3,
-                "score_col": 4,
-                "away_team_col": 5,
-                "date_col_h": 1,
-                "hour_col_h": 2,
-                "home_team_col_h": 3,
-                "score_col_h": 5,
-                "away_team_col_h": 7
-            },
-            "Spain-La-Liga": {
-                "suffix": "La-Liga-Scores-and-Fixtures",
-                "comp_id": 12,
-                "date_col": 1,
-                "hour_col": 2,
-                "home_team_col": 3,
-                "score_col": 4,
-                "away_team_col": 5,
-                "date_col_h": 1,
-                "hour_col_h": 2,
-                "home_team_col_h": 3,
-                "score_col_h": 5,
-                "away_team_col_h": 7
-            },
-            "DE-Bundesliga": {
-                "suffix": "Bundesliga-Scores-and-Fixtures",
-                "comp_id": 20,
-                "date_col": 1,
-                "hour_col": 2,
-                "home_team_col": 3,
-                "score_col": 4,
-                "away_team_col": 5,
-                "date_col_h": 2,
-                "hour_col_h": 3,
-                "home_team_col_h": 4,
-                "score_col_h": 6,
-                "away_team_col_h": 8
-            },
-        }
-        self.main_link = f"https://fbref.com/en/comps/{self.map[comp]['comp_id']}"
+        self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
         self.export_path = f"{start_year}-{datetime.date.today().year}-{comp}.csv"
+        self.confidence = confidence
 
         # extract or load played matches up until previous season
         if extract_historic_data:
@@ -78,30 +28,44 @@ class ExtractMatches:
         # extract current season played and scheduled matches
         self.extract_current_season_data(comp)
 
+        # instantiate the EloRatings class and get the scheduled matches winning probability
+        elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence)
+
+        if future_predictions:
+            scheduled_matches = self.get_scheduled_matches()
+            for k, v in scheduled_matches.items():
+                try:
+                    elo.query_interface(home_team_details=k, away_team=v)
+                except:
+                    continue
+        if see_win_perc:
+            elo.see_win_perc(competition_name=comp)
+        if export_results:
+            elo.export_results(competition_name=comp)
+
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
-
+        
         while start_year < curr_year:
             years = f"{start_year}-{start_year+1}"
-            url = f"{self.main_link}/{years}/schedule/{years}-{self.map[comp]['suffix']}"
-            print(f"Accessing {url}...")
-            
-            self.parse_html(requests.get(url=url), comp, historic=True)
+            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
+            self.parse_html(url=url, historic=True)
             start_year += 1
 
         self.export_historic_data()
 
     def extract_current_season_data(self, comp):
-        current_season = f"{self.main_link}/schedule/{self.map[comp]['suffix']}"
-        print(f"Accessing {current_season}...")
-        self.parse_html(requests.get(url=current_season), comp)
+        url = f"{self.main_link}/schedule/{MAP[comp]['suffix']}"
+        self.parse_html(url=url, comp=comp)
 
-    def parse_html(self, html, comp, historic=False):
-        d_col = self.map[comp]["date_col_h"] if historic else self.map[comp]["date_col"]
-        h_team_col = self.map[comp]["home_team_col_h"] if historic else self.map[comp]["home_team_col"]
-        score_col = self.map[comp]["score_col_h"] if historic else self.map[comp]["score_col"]
-        a_team_col = self.map[comp]["away_team_col_h"] if historic else self.map[comp]["away_team_col"]
-        hour_col = self.map[comp]["hour_col_h"] if historic else self.map[comp]["hour_col"]
+    def parse_html(self, url, comp, historic=False):
+        print(f"\nAccess {url}")
+        html = requests.get(url=url)
+        d_col = MAP[comp]["date_col_h"] if historic else MAP[comp]["date_col"]
+        h_team_col = MAP[comp]["home_team_col_h"] if historic else MAP[comp]["home_team_col"]
+        score_col = MAP[comp]["score_col_h"] if historic else MAP[comp]["score_col"]
+        a_team_col = MAP[comp]["away_team_col_h"] if historic else MAP[comp]["away_team_col"]
+        hour_col = MAP[comp]["hour_col_h"] if historic else MAP[comp]["hour_col"]
 
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
@@ -123,7 +87,7 @@ class ExtractMatches:
                         "away_score": score.replace("–", "-")[2]
                     }
                 elif date and hour:
-                    self.future_matches[home_team] = away_team
+                    self.future_matches[date, hour, home_team] = away_team
             except:
                 continue
 
@@ -140,7 +104,7 @@ class ExtractMatches:
 
     def load_historic_data(self):
         data = pd.read_csv(self.export_path)
-
+        
         date = data["date"].tolist()
         home_team = data["home_team"].tolist()
         away_team = data["away_team"].tolist()
@@ -154,10 +118,10 @@ class ExtractMatches:
                 "home_score": home_score[i],
                 "away_score": away_score[i],
             }
-            
+
     def get_played_matches(self):
         return self.matches
-    
+
     def get_scheduled_matches(self):
         return self.future_matches
 
@@ -167,6 +131,8 @@ class EloRatings:
         self.matches = matches
         self.correct_pred = 0
         self.wrong_pred = 0
+        self.correct_pred_eq = 0
+        self.wrong_pred_eq = 0
         self.confidence = confidence
         self.elo = self.calculate_elo()
 
@@ -202,6 +168,7 @@ class EloRatings:
             if elo["teams"][home_t] >= 30 and elo["teams"][away_t] >= 30:
                 win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
+                self.measure_win_perc_with_equal(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[k]["prediction"] = round(win_prob, 2)
                 self.matches[k]["elo_home_bef"] = elo["ratings"][home_t]
@@ -210,7 +177,7 @@ class EloRatings:
                 # prevent rating inflation
                 k_home = self.get_k_value(elo["ratings"][home_t])
                 k_away = self.get_k_value(elo["ratings"][away_t])
-                
+
                 # recalculate the ratings based on the match result
                 if home_s > away_s:
                     home_weight = 1
@@ -231,7 +198,7 @@ class EloRatings:
                     away_weight = 0.5
 
                 elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
-                elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - (1-win_prob)))
+                elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
 
                 self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
                 self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
@@ -266,9 +233,10 @@ class EloRatings:
 
     def winning_prob(self, home_rating, away_rating):
         # probability of winning
-        return 1 / (1+pow(10, (away_rating - home_rating) / 600))
+        return 1 / (1 + pow(10, (away_rating - home_rating) / 600))
 
-    def query_interface(self, home_team, away_team):
+    def query_interface(self, home_team_details, away_team):
+        date, hour, home_team = home_team_details
         win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
         s = ""
 
@@ -277,8 +245,10 @@ class EloRatings:
         if self.elo["teams"][away_team] < 30:
             s += f" Keep in mind that {away_team} has only {self.elo['teams'][away_team]} matches played."
 
-        print(f"{home_team} [Elo: {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% chance to win against "
-              f"{away_team} [Elo: {self.elo['ratings'][away_team]}].{s}")
+        print(
+            f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
+            f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}"
+        )
 
     def measure_win_perc(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and home_s > away_s:
@@ -290,11 +260,24 @@ class EloRatings:
         elif win_prob <= 0.3 and (home_s > away_s or home_s == away_s):
             self.wrong_pred += 1
 
+    def measure_win_perc_with_equal(self, win_prob, home_s, away_s):
+        if win_prob >= self.confidence and (home_s > away_s or home_s == away_s):
+            self.correct_pred_eq += 1
+        elif win_prob >= self.confidence and home_s < away_s:
+            self.wrong_pred_eq += 1
+        if win_prob <= 0.3 and (home_s < away_s or home_s == away_s):
+            self.correct_pred_eq += 1
+        elif win_prob <= 0.3 and home_s > away_s:
+            self.wrong_pred_eq += 1
+
     def see_win_perc(self, competition_name):
-        print(f"For {competition_name}:\n"
-              f"Correct predictions: {self.correct_pred}, "
+        print(f"{competition_name.upper()}: Correct predictions: {self.correct_pred}, "
               f"Wrong predictions: {self.wrong_pred}. "
-              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%\n")
+              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
+
+        print(f"{competition_name.upper()}: Correct predictions WITH EQ: {self.correct_pred_eq}, "
+              f"Wrong predictions: {self.wrong_pred_eq}. "
+              f"Accurate predictions: {round((self.correct_pred_eq / (self.correct_pred_eq + self.wrong_pred_eq)) * 100)}%\n")
 
     def export_results(self, competition_name):
         df = pd.DataFrame(
@@ -313,3 +296,63 @@ class EloRatings:
         )
 
         df.to_csv(f"{competition_name}.csv", encoding="utf-8-sig")
+
+
+MAP = {
+    "RO-Liga-1": {
+        "suffix": "Liga-I-Scores-and-Fixtures",
+        "comp_id": 47,
+        "date_col": 1,
+        "hour_col": 2,
+        "home_team_col": 3,
+        "score_col": 4,
+        "away_team_col": 5,
+        "date_col_h": 2,
+        "hour_col_h": 3,
+        "home_team_col_h": 4,
+        "score_col_h": 5,
+        "away_team_col_h": 6
+    },
+    "UK-Premier-League": {
+        "suffix": "Premier-League-Scores-and-Fixtures",
+        "comp_id": 9,
+        "date_col": 1,
+        "hour_col": 2,
+        "home_team_col": 3,
+        "score_col": 4,
+        "away_team_col": 5,
+        "date_col_h": 1,
+        "hour_col_h": 2,
+        "home_team_col_h": 3,
+        "score_col_h": 5,
+        "away_team_col_h": 7
+    },
+    "Spain-La-Liga": {
+        "suffix": "La-Liga-Scores-and-Fixtures",
+        "comp_id": 12,
+        "date_col": 1,
+        "hour_col": 2,
+        "home_team_col": 3,
+        "score_col": 4,
+        "away_team_col": 5,
+        "date_col_h": 1,
+        "hour_col_h": 2,
+        "home_team_col_h": 3,
+        "score_col_h": 5,
+        "away_team_col_h": 7
+    },
+    "DE-Bundesliga": {
+        "suffix": "Bundesliga-Scores-and-Fixtures",
+        "comp_id": 20,
+        "date_col": 1,
+        "hour_col": 2,
+        "home_team_col": 3,
+        "score_col": 4,
+        "away_team_col": 5,
+        "date_col_h": 2,
+        "hour_col_h": 3,
+        "home_team_col_h": 4,
+        "score_col_h": 6,
+        "away_team_col_h": 8
+    },
+}
