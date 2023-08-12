@@ -10,8 +10,7 @@ class ExtractMatches:
                  start_year, 
                  confidence=0.6,
                  future_predictions=True,
-                 see_win_perc=False,
-                 extract_historic_data=False, 
+                 see_win_perc=True,
                  export_results=False):
         self.matches = {}
         self.future_matches = {}
@@ -19,11 +18,8 @@ class ExtractMatches:
         self.export_path = f"{start_year}-{datetime.date.today().year}-{comp}.csv"
         self.confidence = confidence
 
-        # extract or load played matches up until previous season
-        if extract_historic_data:
-            self.extract_historic_data(start_year, comp)
-        else:
-            self.load_historic_data()
+        # get played matches
+        self.load_historic_data(start_year, comp)
 
         # extract current season played and scheduled matches
         self.extract_current_season_data(comp)
@@ -49,47 +45,53 @@ class ExtractMatches:
         while start_year < curr_year:
             years = f"{start_year}-{start_year+1}"
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
-            self.parse_html(url=url, historic=True)
+            self.parse_html(url=url)
             start_year += 1
 
         self.export_historic_data()
 
     def extract_current_season_data(self, comp):
         url = f"{self.main_link}/schedule/{MAP[comp]['suffix']}"
-        self.parse_html(url=url, comp=comp)
+        self.parse_html(url=url)
 
-    def parse_html(self, url, comp, historic=False):
+    def parse_html(self, url):
         print(f"\nAccess {url}")
         html = requests.get(url=url)
-        d_col = MAP[comp]["date_col_h"] if historic else MAP[comp]["date_col"]
-        h_team_col = MAP[comp]["home_team_col_h"] if historic else MAP[comp]["home_team_col"]
-        score_col = MAP[comp]["score_col_h"] if historic else MAP[comp]["score_col"]
-        a_team_col = MAP[comp]["away_team_col_h"] if historic else MAP[comp]["away_team_col"]
-        hour_col = MAP[comp]["hour_col_h"] if historic else MAP[comp]["hour_col"]
-
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
 
         for match in matches:
             try:
-                date = match.find_all("td")[d_col].text
-                hour = match.find_all("td")[hour_col].text
-                score = match.find_all("td")[score_col].text
-                home_team = match.find_all("td")[h_team_col].text
-                away_team = match.find_all("td")[a_team_col].text
-
-                if score:
-                    key = f'{date} {hour}'
-                    self.matches[key] = {
-                        "home_team": home_team,
-                        "away_team": away_team,
-                        "home_score": score.replace("–", "-")[0],
-                        "away_score": score.replace("–", "-")[2]
-                    }
-                elif date and hour:
-                    self.future_matches[date, hour, home_team] = away_team
+                date = match.find("td", {"data-stat": "date"}).find("a").text
             except:
-                continue
+                date = None
+            try:
+                hour = match.find("td", {"data-stat": "start_time"}).find("span", {"class": "venuetime"})["data-venue-time"]
+            except:
+                hour = None
+            try:
+                score = match.find("td", {"data-stat": "score"}).find("a").text
+            except:
+                score = None
+            try:
+                home_team = match.find("td", {"data-stat": "home_team"}).find("a").text
+            except:
+                home_team = None
+            try:
+                away_team = match.find("td", {"data-stat": "away_team"}).find("a").text
+            except:
+                away_team = None
+
+            if score:
+                key = f'{date} {hour}'
+                self.matches[key] = {
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "home_score": score.replace("–", "-")[0],
+                    "away_score": score.replace("–", "-")[2]
+                }
+            elif date and hour:
+                self.future_matches[date, hour, home_team] = away_team
 
     def export_historic_data(self):
         pd.DataFrame(
@@ -102,8 +104,13 @@ class ExtractMatches:
             }
         ).to_csv(self.export_path, encoding="utf-8-sig")
 
-    def load_historic_data(self):
-        data = pd.read_csv(self.export_path)
+    def load_historic_data(self, start_year, comp):
+        # extract or load played matches up until previous season
+        try:
+            data = pd.read_csv(self.export_path)
+        except OSError:
+            self.extract_historic_data(start_year, comp)
+            data = pd.read_csv(self.export_path)
         
         date = data["date"].tolist()
         home_team = data["home_team"].tolist()
@@ -131,8 +138,8 @@ class EloRatings:
         self.matches = matches
         self.correct_pred = 0
         self.wrong_pred = 0
-        self.correct_pred_eq = 0
-        self.wrong_pred_eq = 0
+        self.correct_pred_draw = 0
+        self.wrong_pred_draw = 0
         self.confidence = confidence
         self.elo = self.calculate_elo()
 
@@ -168,7 +175,7 @@ class EloRatings:
             if elo["teams"][home_t] >= 30 and elo["teams"][away_t] >= 30:
                 win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
-                self.measure_win_perc_with_equal(win_prob=win_prob, home_s=home_s, away_s=away_s)
+                self.measure_win_perc_with_draw(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[k]["prediction"] = round(win_prob, 2)
                 self.matches[k]["elo_home_bef"] = elo["ratings"][home_t]
@@ -260,24 +267,24 @@ class EloRatings:
         elif win_prob <= 0.3 and (home_s > away_s or home_s == away_s):
             self.wrong_pred += 1
 
-    def measure_win_perc_with_equal(self, win_prob, home_s, away_s):
+    def measure_win_perc_with_draw(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and (home_s > away_s or home_s == away_s):
-            self.correct_pred_eq += 1
+            self.correct_pred_draw += 1
         elif win_prob >= self.confidence and home_s < away_s:
-            self.wrong_pred_eq += 1
+            self.wrong_pred_draw += 1
         if win_prob <= 0.3 and (home_s < away_s or home_s == away_s):
-            self.correct_pred_eq += 1
+            self.correct_pred_draw += 1
         elif win_prob <= 0.3 and home_s > away_s:
-            self.wrong_pred_eq += 1
+            self.wrong_pred_draw += 1
 
     def see_win_perc(self, competition_name):
         print(f"{competition_name.upper()}: Correct predictions: {self.correct_pred}, "
               f"Wrong predictions: {self.wrong_pred}. "
               f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
 
-        print(f"{competition_name.upper()}: Correct predictions WITH EQ: {self.correct_pred_eq}, "
-              f"Wrong predictions: {self.wrong_pred_eq}. "
-              f"Accurate predictions: {round((self.correct_pred_eq / (self.correct_pred_eq + self.wrong_pred_eq)) * 100)}%\n")
+        print(f"{competition_name.upper()}: Correct predictions with draws: {self.correct_pred_draw}, "
+              f"Wrong predictions: {self.wrong_pred_draw}. "
+              f"Accurate predictions: {round((self.correct_pred_draw / (self.correct_pred_draw + self.wrong_pred_draw)) * 100)}%\n")
 
     def export_results(self, competition_name):
         df = pd.DataFrame(
@@ -302,57 +309,49 @@ MAP = {
     "RO-Liga-1": {
         "suffix": "Liga-I-Scores-and-Fixtures",
         "comp_id": 47,
-        "date_col": 1,
-        "hour_col": 2,
-        "home_team_col": 3,
-        "score_col": 4,
-        "away_team_col": 5,
-        "date_col_h": 2,
-        "hour_col_h": 3,
-        "home_team_col_h": 4,
-        "score_col_h": 5,
-        "away_team_col_h": 6
     },
     "UK-Premier-League": {
         "suffix": "Premier-League-Scores-and-Fixtures",
         "comp_id": 9,
-        "date_col": 1,
-        "hour_col": 2,
-        "home_team_col": 3,
-        "score_col": 4,
-        "away_team_col": 5,
-        "date_col_h": 1,
-        "hour_col_h": 2,
-        "home_team_col_h": 3,
-        "score_col_h": 5,
-        "away_team_col_h": 7
     },
-    "Spain-La-Liga": {
+    "SP-La-Liga": {
         "suffix": "La-Liga-Scores-and-Fixtures",
         "comp_id": 12,
-        "date_col": 1,
-        "hour_col": 2,
-        "home_team_col": 3,
-        "score_col": 4,
-        "away_team_col": 5,
-        "date_col_h": 1,
-        "hour_col_h": 2,
-        "home_team_col_h": 3,
-        "score_col_h": 5,
-        "away_team_col_h": 7
     },
     "DE-Bundesliga": {
         "suffix": "Bundesliga-Scores-and-Fixtures",
         "comp_id": 20,
-        "date_col": 1,
-        "hour_col": 2,
-        "home_team_col": 3,
-        "score_col": 4,
-        "away_team_col": 5,
-        "date_col_h": 2,
-        "hour_col_h": 3,
-        "home_team_col_h": 4,
-        "score_col_h": 6,
-        "away_team_col_h": 8
+    },
+    "IT-Serie-A": {
+        "suffix": "Serie-A-Scores-and-Fixtures",
+        "comp_id": 11,
+    },
+    "FR-Ligue-1": {
+        "suffix": "Ligue-1-Scores-and-Fixtures",
+        "comp_id": 13,
+    },
+    "BLG-Pro-League": {
+        "suffix": "Belgian-Pro-League-Scores-and-Fixtures",
+        "comp_id": 37,
+    },
+    "BRZ-Serie-A": {
+        "suffix": "Serie-A-Scores-and-Fixtures",
+        "comp_id": 24,
+    },
+    "CROAT-League": {
+        "suffix": "Hrvatska-NL-Scores-and-Fixtures",
+        "comp_id": 63,
+    },
+    "CZECH-League": {
+        "suffix": "Czech-First-League-Scores-and-Fixtures",
+        "comp_id": 66,
+    },
+    "NETHRL-League": {
+        "suffix": "Eredivisie-Scores-and-Fixtures",
+        "comp_id": 23,
+    },
+    "SCOT-League": {
+        "suffix": "Scottish-Premiership-Scores-and-Fixtures",
+        "comp_id": 40,
     },
 }
