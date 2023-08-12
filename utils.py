@@ -2,12 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import datetime
+import time
 
 
 class ExtractMatches:
-    def __init__(self, 
-                 comp, 
-                 start_year, 
+    def __init__(self,
+                 comp,
+                 start_year,
                  confidence=0.6,
                  future_predictions=True,
                  see_win_perc=True,
@@ -41,12 +42,13 @@ class ExtractMatches:
 
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
-        
+
         while start_year < curr_year:
-            years = f"{start_year}-{start_year+1}"
+            years = f"{start_year}-{start_year + 1}"
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
+            time.sleep(1)
 
         self.export_historic_data()
 
@@ -108,23 +110,23 @@ class ExtractMatches:
         # extract or load played matches up until previous season
         try:
             data = pd.read_csv(self.export_path)
+
+            date = data["date"].tolist()
+            home_team = data["home_team"].tolist()
+            away_team = data["away_team"].tolist()
+            home_score = data["home_score"].tolist()
+            away_score = data["away_score"].tolist()
+
+            for i in range(len(date)):
+                self.matches[f"{date[i]}_({i})"] = {
+                    "home_team": home_team[i],
+                    "away_team": away_team[i],
+                    "home_score": home_score[i],
+                    "away_score": away_score[i],
+                }
+
         except OSError:
             self.extract_historic_data(start_year, comp)
-            data = pd.read_csv(self.export_path)
-        
-        date = data["date"].tolist()
-        home_team = data["home_team"].tolist()
-        away_team = data["away_team"].tolist()
-        home_score = data["home_score"].tolist()
-        away_score = data["away_score"].tolist()
-
-        for i in range(len(date)):
-            self.matches[f"{date[i]}_({i})"] = {
-                "home_team": home_team[i],
-                "away_team": away_team[i],
-                "home_score": home_score[i],
-                "away_score": away_score[i],
-            }
 
     def get_played_matches(self):
         return self.matches
@@ -279,12 +281,18 @@ class EloRatings:
 
     def see_win_perc(self, competition_name):
         print(f"{competition_name.upper()}: Correct predictions: {self.correct_pred}, "
-              f"Wrong predictions: {self.wrong_pred}. "
-              f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
+              f"Wrong predictions: {self.wrong_pred}. ")
+        if min(self.correct_pred, self.wrong_pred) == 0:
+            print(f"Accurate predictions: God knows.")
+        else:
+            print(f"Accurate predictions: {round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%")
 
         print(f"{competition_name.upper()}: Correct predictions with draws: {self.correct_pred_draw}, "
-              f"Wrong predictions: {self.wrong_pred_draw}. "
-              f"Accurate predictions: {round((self.correct_pred_draw / (self.correct_pred_draw + self.wrong_pred_draw)) * 100)}%\n")
+              f"Wrong predictions: {self.wrong_pred_draw}. ")
+        if min(self.correct_pred_draw, self.wrong_pred_draw) == 0:
+            print(f"Accurate predictions: God knows.")
+        else:
+            print(f"Accurate predictions: {round((self.correct_pred_draw / (self.correct_pred_draw + self.wrong_pred_draw)) * 100)}%\n")
 
     def export_results(self, competition_name):
         df = pd.DataFrame(
