@@ -2,13 +2,16 @@ from utils import ExtractMatches, EloRatings
 
 
 if __name__ == "__main__":
-    # Germany_Bundesliga = ExtractMatches(start_year=2017, comp="DE-Bundesliga")
-    UK_Premier_League = ExtractMatches(start_year=2017, comp="UK-Premier-League")
-    Spain_La_Liga = ExtractMatches(start_year=2017, comp="Spain-La-Liga")
-    RO_Liga_1 = ExtractMatches(start_year=2018,
-                               comp="RO-Liga-1",
-                               confidence=0.6,
-                               extract_historic_data=False,
-                               export_results=False,
-                               future_predictions=True,
-                               see_win_perc=False)
+    Romania = ExtractMatches(comp="RO-Liga-1", start_year=2018, confidence=0.6)
+    Germany = ExtractMatches(comp="DE-Bundesliga", start_year=2017, confidence=0.6)
+    Italy = ExtractMatches(omp="IT-Serie-A", start_year=2018, confidence=0.6)
+    France = ExtractMatches(comp="FR-Ligue-1", start_year=2019, confidence=0.6)
+    UK = ExtractMatches(comp="UK-Premier-League", start_year=2017)
+    Spain = ExtractMatches(comp="SP-La-Liga", start_year=2019)
+    Belgium = ExtractMatches(comp="BLG-Pro-League", start_year=2019)
+    Brazil = ExtractMatches(comp="BRZ-Serie-A", start_year=2019)
+    Croatia = ExtractMatches(comp="CROAT-League", start_year=2019)
+    Czech = ExtractMatches(comp="CZECH-League", start_year=2019)
+    Netherlands = ExtractMatches(comp="NETHRL-League", start_year=2019)
+    Scotland = ExtractMatches(comp="SCOT-League", start_year=2019)
+
