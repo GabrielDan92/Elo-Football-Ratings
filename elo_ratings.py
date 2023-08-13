@@ -125,12 +125,13 @@ class EloRatings:
         )
         s = ""
 
-        if self.elo["teams"][home_team] < 30:
-            s += f" Keep in mind that {home_team} has only {self.elo['teams'][home_team]} matches played."
-        if self.elo["teams"][away_team] < 30:
-            s += f" Keep in mind that {away_team} has only {self.elo['teams'][away_team]} matches played."
+        if win_prob <= 0.3 or win_prob >= self.confidence:
+            if self.elo["teams"][home_team] < 30:
+                s += f" Keep in mind that {home_team} has only {self.elo['teams'][home_team]} matches played."
+            if self.elo["teams"][away_team] < 30:
+                s += f" Keep in mind that {away_team} has only {self.elo['teams'][away_team]} matches played."
 
-        print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
+            print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
               f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
 
     def measure_win_perc(self, win_prob, home_s, away_s):
