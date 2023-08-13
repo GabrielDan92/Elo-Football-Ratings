@@ -2,8 +2,8 @@ from extract_matches import ExtractMatches
 
 
 if __name__ == "__main__":
-    # Australia = ExtractMatches(comp="AUSTRL-League", start_year=2017, confidence=0.6) # not in unibet
-    # Greece = ExtractMatches(comp="GREEK-Superliga", start_year=2018, confidence=0.6) # not in Unibet
+    Australia = ExtractMatches(comp="AUSTRL-League", start_year=2017, confidence=0.6)
+    Greece = ExtractMatches(comp="GREEK-Superliga", start_year=2018, confidence=0.6)
     Romania = ExtractMatches(comp="RO-Liga-1", start_year=2019, confidence=0.6)
     Germany = ExtractMatches(comp="DE-Bundesliga", start_year=2017, confidence=0.6)
     Italy = ExtractMatches(comp="IT-Serie-A", start_year=2018, confidence=0.6)
