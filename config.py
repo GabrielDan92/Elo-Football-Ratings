@@ -30,6 +30,7 @@ MAP = {
     "BRZ-Serie-A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 24,
+        "custom_link": True
     },
     "CROAT-League": {
         "suffix": "Hrvatska-NL-Scores-and-Fixtures",
@@ -46,5 +47,49 @@ MAP = {
     "SCOT-League": {
         "suffix": "Scottish-Premiership-Scores-and-Fixtures",
         "comp_id": 40,
+    },
+    "ARG-Primera-Division": {
+        "suffix": "Primera-Division-Scores-and-Fixtures",
+        "comp_id": 21,
+        "custom_link": True
+    },
+    "AUSTRL-League": {
+        "suffix": "A-League-Men-Scores-and-Fixtures",
+        "comp_id": 65,
+    },
+    "AUSTR-Bundesliga": {
+        "suffix": "Austrian-Bundesliga-Scores-and-Fixtures",
+        "comp_id": 56,
+    },
+    "DENMRK-Superliga": {
+        "suffix": "Superliga-Scores-and-Fixtures",
+        "comp_id": 50,
+    },
+    "FINL-Veikkausliiga": {
+        "suffix": "Veikkausliiga-Scores-and-Fixtures",
+        "comp_id": 43,
+        "custom_link": True
+    },
+    "GREEK-Superliga": {
+        "suffix": "Super-League-Greece-Scores-and-Fixtures",
+        "comp_id": 27,
+    },
+    "PORT-Superliga": {
+        "suffix": "Primeira-Liga-Scores-and-Fixtures",
+        "comp_id": 32,
+    },
+    "POLND-Ekstraklasa": {
+        "suffix": "Ekstraklasa-Scores-and-Fixtures",
+        "comp_id": 36,
+    },
+    "NORW-Eliteserien": {
+        "suffix": "Eliteserien-Scores-and-Fixtures",
+        "comp_id": 28,
+        "custom_link": True
+    },
+    "SWE-Allsvenskan": {
+        "suffix": "Eliteserien-Scores-and-Fixtures",
+        "comp_id": 29,
+        "custom_link": True
     },
 }
