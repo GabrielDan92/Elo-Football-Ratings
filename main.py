@@ -1,5 +1,4 @@
-from utils import ExtractMatches, EloRatings
-
+from extract_matches import ExtractMatches
 
 if __name__ == "__main__":
     Romania = ExtractMatches(comp="RO-Liga-1", start_year=2018, confidence=0.6)
