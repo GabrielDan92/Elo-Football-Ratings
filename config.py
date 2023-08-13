@@ -88,7 +88,7 @@ MAP = {
         "custom_link": True
     },
     "SWE-Allsvenskan": {
-        "suffix": "Eliteserien-Scores-and-Fixtures",
+        "suffix": "Allsvenskan-Scores-and-Fixtures",
         "comp_id": 29,
         "custom_link": True
     },
