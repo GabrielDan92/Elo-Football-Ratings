@@ -50,7 +50,10 @@ class ExtractMatches:
         curr_year = datetime.date.today().year
 
         while start_year < curr_year:
-            years = f"{start_year}-{start_year + 1}"
+            if "custom_link" in MAP[comp].keys():
+                years = f"{start_year + 1}"
+            else:
+                years = f"{start_year}-{start_year + 1}"
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
