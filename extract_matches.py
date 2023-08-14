@@ -116,6 +116,7 @@ class ExtractMatches:
             elif date and hour:
                 self.future_matches[date, hour, home_team] = away_team
 
+        # prevent making more than 20 requests per minute
         time.sleep(3.1)
 
     def export_historic_data(self):

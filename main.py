@@ -1,8 +1,11 @@
+import os
+from rich import print
 from extract_matches import ExtractMatches
 from rich_pretty_print import PrettyResults
 
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(__file__))
     Australia = ExtractMatches(comp="AUSTRL-League", start_year=2017, confidence=0.6)
     Greece = ExtractMatches(comp="GREEK-Superliga", start_year=2018, confidence=0.6)
     Romania = ExtractMatches(comp="RO-Liga-1", start_year=2019, confidence=0.6)
@@ -26,3 +29,5 @@ if __name__ == "__main__":
     Sweden = ExtractMatches(comp="SWE-Allsvenskan", start_year=2018, confidence=0.58)
 
     PrettyResults().see_predictions()
+    print("[bold magenta]Press any key to end[/bold magenta].")
+    input()

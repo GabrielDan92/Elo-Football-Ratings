@@ -145,7 +145,7 @@ class EloRatings:
             msg += f'{away_team} ({self.elo["teams"][away_team]})'
 
         if win_prob <= 0.3 or win_prob >= self.confidence:
-            pretty.add_row(
+            pretty.save_matches(
                 date=date,
                 hour=hour,
                 home_team=home_team,
