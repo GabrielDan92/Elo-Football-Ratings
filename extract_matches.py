@@ -21,11 +21,10 @@ class ExtractMatches:
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
+        self.confidence = confidence
         self.export_path = (
             f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
         )
-        self.confidence = confidence
-        time.sleep(3)
 
         # get played matches
         self.load_historic_data(start_year, comp)
@@ -48,6 +47,7 @@ class ExtractMatches:
                                                home_team_details=k,
                                                away_team=v,
                                                comp=comp,
+                                               confidence=confidence,
                                                correct_pred=correct_pred,
                                                wrong_pred=wrong_pred)
                 except:
@@ -67,7 +67,6 @@ class ExtractMatches:
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
-            time.sleep(3)
 
         self.export_historic_data()
 
@@ -116,6 +115,8 @@ class ExtractMatches:
                 }
             elif date and hour:
                 self.future_matches[date, hour, home_team] = away_team
+
+        time.sleep(3.1)
 
     def export_historic_data(self):
         pd.DataFrame(

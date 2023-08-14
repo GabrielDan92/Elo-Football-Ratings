@@ -25,4 +25,4 @@ if __name__ == "__main__":
     Norway = ExtractMatches(comp="NORW-Eliteserien", start_year=2017, confidence=0.55)
     Sweden = ExtractMatches(comp="SWE-Allsvenskan", start_year=2018, confidence=0.58)
 
-    PrettyResults().print_table()
+    PrettyResults().see_predictions()

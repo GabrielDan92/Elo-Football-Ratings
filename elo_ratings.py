@@ -134,7 +134,7 @@ class EloRatings:
             print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
                   f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
 
-    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, correct_pred, wrong_pred):
+    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, correct_pred, wrong_pred, confidence):
         date, hour, home_team = home_team_details
         win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
         msg = ""
@@ -153,6 +153,7 @@ class EloRatings:
                 win_prob=win_prob,
                 matches_count=msg,
                 comp=comp,
+                confidence=confidence,
                 correct_pred=correct_pred,
                 wrong_pred=wrong_pred
             )

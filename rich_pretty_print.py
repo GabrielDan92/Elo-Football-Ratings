@@ -27,7 +27,7 @@ class PrettyResults(metaclass=Singleton):
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
         prediction = kwargs['win_prob']
         played_matches = kwargs['matches_count']
-        competition = kwargs['comp']
+        competition = f"{kwargs['comp']} (Conf: {kwargs['confidence']})"
         pred_percent = f"[bold][green]{str(round(prediction, 2))}%[/green][/bold]"
 
         try:
@@ -46,5 +46,5 @@ class PrettyResults(metaclass=Singleton):
             perc_corr_predictions
         )
 
-    def print_table(self):
+    def see_predictions(self):
         print(self.table)
