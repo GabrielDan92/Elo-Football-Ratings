@@ -1,10 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 from elo_ratings import EloRatings
-from config import MAP
+from rich_pretty_print import PrettyResults
+from config import MAP, user_agents
 import pandas as pd
 import datetime
 import time
+import random
 
 
 class ExtractMatches:
@@ -14,7 +16,6 @@ class ExtractMatches:
         start_year,
         confidence=0.6,
         future_predictions=True,
-        see_win_perc=True,
         export_results=False,
     ):
         self.matches = {}
@@ -24,6 +25,7 @@ class ExtractMatches:
             f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
         )
         self.confidence = confidence
+        time.sleep(3)
 
         # get played matches
         self.load_historic_data(start_year, comp)
@@ -31,20 +33,29 @@ class ExtractMatches:
         # extract current season played and scheduled matches
         self.extract_current_season_data(comp)
 
+        # instantiate the PrettyResults class and pass its instance to pretty_query_interface()
+        pretty = PrettyResults()
+
         # instantiate the EloRatings class and get the scheduled matches winning probability
         elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence)
+        correct_pred, wrong_pred = elo.get_win_perc()
 
         if future_predictions:
             scheduled_matches = self.get_scheduled_matches()
             for k, v in scheduled_matches.items():
                 try:
-                    elo.query_interface(home_team_details=k, away_team=v)
+                    elo.pretty_query_interface(pretty,
+                                               home_team_details=k,
+                                               away_team=v,
+                                               comp=comp,
+                                               correct_pred=correct_pred,
+                                               wrong_pred=wrong_pred)
                 except:
                     continue
-        if see_win_perc:
-            elo.see_win_perc(competition_name=comp)
+
         if export_results:
             elo.export_results(competition_name=comp)
+
 
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
@@ -57,7 +68,7 @@ class ExtractMatches:
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
-            time.sleep(1)
+            time.sleep(3)
 
         self.export_historic_data()
 
@@ -67,7 +78,8 @@ class ExtractMatches:
 
     def parse_html(self, url):
         print(f"\nAccess {url}")
-        html = requests.get(url=url)
+        headers = {'User-Agent': random.choice(user_agents)}
+        html = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
 
@@ -96,7 +108,7 @@ class ExtractMatches:
                 away_team = None
 
             if score:
-                key = f"{date} {hour}"
+                key = f"{date} {hour} {home_team}"
                 self.matches[key] = {
                     "home_team": home_team,
                     "away_team": away_team,
