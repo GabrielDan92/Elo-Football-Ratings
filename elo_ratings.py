@@ -132,7 +132,28 @@ class EloRatings:
                 s += f" Keep in mind that {away_team} has only {self.elo['teams'][away_team]} matches played."
 
             print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
-              f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
+                  f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
+
+    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, correct_pred, wrong_pred):
+        date, hour, home_team = home_team_details
+        win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
+        msg = ""
+
+        if self.elo["teams"][home_team] < 30:
+            msg += f'{home_team} ({self.elo["teams"][home_team]})'
+        if self.elo["teams"][away_team] < 30:
+            msg += f'{away_team} ({self.elo["teams"][away_team]})'
+
+        if win_prob <= 0.3 or win_prob >= self.confidence:
+            pretty.append_row(date=date,
+                              hour=hour,
+                              home_team=home_team,
+                              away_team=away_team,
+                              win_prob=win_prob,
+                              matches_count=msg,
+                              comp=comp,
+                              correct_pred=correct_pred,
+                              wrong_pred=wrong_pred)
 
     def measure_win_perc(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and home_s > away_s:
@@ -169,6 +190,9 @@ class EloRatings:
                    f"{round((self.correct_pred_draw / (self.correct_pred_draw + self.wrong_pred_draw)) * 100)}%\n"
 
         print(msg)
+
+    def get_win_perc(self):
+        return self.correct_pred, self.wrong_pred
 
     def export_results(self, competition_name):
         df = pd.DataFrame(
