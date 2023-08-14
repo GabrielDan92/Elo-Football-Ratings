@@ -75,7 +75,7 @@ class ExtractMatches:
         self.parse_html(url=url)
 
     def parse_html(self, url):
-        print(f"\nAccess {url}")
+        print(f"Access {url}")
         headers = {'User-Agent': random.choice(user_agents)}
         html = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(html.text, "html.parser")
