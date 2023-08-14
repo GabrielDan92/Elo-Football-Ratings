@@ -56,7 +56,6 @@ class ExtractMatches:
         if export_results:
             elo.export_results(competition_name=comp)
 
-
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
 

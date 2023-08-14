@@ -145,15 +145,17 @@ class EloRatings:
             msg += f'{away_team} ({self.elo["teams"][away_team]})'
 
         if win_prob <= 0.3 or win_prob >= self.confidence:
-            pretty.append_row(date=date,
-                              hour=hour,
-                              home_team=home_team,
-                              away_team=away_team,
-                              win_prob=win_prob,
-                              matches_count=msg,
-                              comp=comp,
-                              correct_pred=correct_pred,
-                              wrong_pred=wrong_pred)
+            pretty.add_row(
+                date=date,
+                hour=hour,
+                home_team=home_team,
+                away_team=away_team,
+                win_prob=win_prob,
+                matches_count=msg,
+                comp=comp,
+                correct_pred=correct_pred,
+                wrong_pred=wrong_pred
+            )
 
     def measure_win_perc(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and home_s > away_s:
