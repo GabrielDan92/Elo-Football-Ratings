@@ -4,7 +4,7 @@ from rich import print
 
 class Singleton(type):
     _instances = {}
-    
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
@@ -22,12 +22,13 @@ class PrettyResults(metaclass=Singleton):
         self.table.add_column("Competition", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions", no_wrap=True, style="cyan")
 
-    def append_row(self, **kwargs):
+    def add_row(self, **kwargs):
         date = f"{kwargs['date']}, {kwargs['hour']}"
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
         prediction = kwargs['win_prob']
         played_matches = kwargs['matches_count']
         competition = kwargs['comp']
+        pred_percent = f"[bold][green]{str(round(prediction, 2))}%[/green][/bold]"
 
         try:
             perc_corr_predictions = \
@@ -39,7 +40,7 @@ class PrettyResults(metaclass=Singleton):
         self.table.add_row(
             date,
             teams,
-            f"[bold][green]{str(round(prediction, 2))}%[/green][/bold]",
+            pred_percent,
             played_matches,
             competition,
             perc_corr_predictions
