@@ -1,4 +1,5 @@
 from extract_matches import ExtractMatches
+from rich_pretty_print import PrettyResults
 
 
 if __name__ == "__main__":
@@ -23,3 +24,5 @@ if __name__ == "__main__":
     Poland = ExtractMatches(comp="POLND-Ekstraklasa", start_year=2018, confidence=0.59)
     Norway = ExtractMatches(comp="NORW-Eliteserien", start_year=2017, confidence=0.55)
     Sweden = ExtractMatches(comp="SWE-Allsvenskan", start_year=2018, confidence=0.58)
+
+    PrettyResults().print_table()
