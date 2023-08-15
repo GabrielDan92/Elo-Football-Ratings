@@ -140,9 +140,9 @@ class EloRatings:
         msg = ""
 
         if self.elo["teams"][home_team] < 30:
-            msg += f'{home_team} ({self.elo["teams"][home_team]})'
+            msg += f'{home_team} ({self.elo["teams"][home_team]}) '
         if self.elo["teams"][away_team] < 30:
-            msg += f'{away_team} ({self.elo["teams"][away_team]})'
+            msg += f'{away_team} ({self.elo["teams"][away_team]}) '
 
         kwargs_dict = {
             "date": date,

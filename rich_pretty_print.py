@@ -3,6 +3,11 @@ from rich import print
 
 
 class Singleton(type):
+    """
+    Each competition has its own ExtractMatches() instance that sends the scheduled matches to the rich table.
+    Using the singleton approach I can save all matches in one table and only print it at the end,
+    instead of having a different table for each competition.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
