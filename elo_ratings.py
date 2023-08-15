@@ -144,19 +144,21 @@ class EloRatings:
         if self.elo["teams"][away_team] < 30:
             msg += f'{away_team} ({self.elo["teams"][away_team]})'
 
+        kwargs_dict = {
+            "date": date,
+            "hour": hour,
+            "home_team": home_team,
+            "away_team": away_team,
+            "win_prob": win_prob,
+            "matches_count": msg,
+            "comp": comp,
+            "confidence": confidence,
+            "correct_pred": correct_pred,
+            "wrong_pred": wrong_pred
+        }
+
         if win_prob <= 0.3 or win_prob >= self.confidence:
-            pretty.save_matches(
-                date=date,
-                hour=hour,
-                home_team=home_team,
-                away_team=away_team,
-                win_prob=win_prob,
-                matches_count=msg,
-                comp=comp,
-                confidence=confidence,
-                correct_pred=correct_pred,
-                wrong_pred=wrong_pred
-            )
+            pretty.save_matches(**kwargs_dict)
 
     def measure_win_perc(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and home_s > away_s:
