@@ -17,6 +17,7 @@ class ExtractMatches:
         confidence=0.6,
         future_predictions=True,
         export_results=False,
+        misc_league=False
     ):
         self.matches = {}
         self.future_matches = {}
@@ -36,7 +37,7 @@ class ExtractMatches:
         pretty = PrettyResults()
 
         # instantiate the EloRatings class and get the scheduled matches winning probability
-        elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence)
+        elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence, misc_league=misc_league)
         correct_pred, wrong_pred = elo.get_win_perc()
 
         if future_predictions:
@@ -47,9 +48,7 @@ class ExtractMatches:
                                                home_team_details=k,
                                                away_team=v,
                                                comp=comp,
-                                               confidence=confidence,
-                                               correct_pred=correct_pred,
-                                               wrong_pred=wrong_pred)
+                                               confidence=confidence)
                 except:
                     continue
 

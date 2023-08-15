@@ -19,28 +19,36 @@ class Singleton(type):
 class PrettyResults(metaclass=Singleton):
     def __init__(self):
         self.matches = {}
-        self.table = Table(show_header=True, header_style="bold magenta", show_lines=True, title_justify="center")
+        self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
         self.table.add_column("Match time", no_wrap=True, style="cyan")
         self.table.add_column("Teams", no_wrap=True, style="cyan")
         self.table.add_column("Prediction", no_wrap=True, justify="center")
         self.table.add_column("<30 played matches", no_wrap=True, style="cyan")
         self.table.add_column("Competition", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions", no_wrap=True, style="cyan")
+        self.table.add_column("% of correct predictions w/ draws", no_wrap=True, style="cyan")
 
     def save_matches(self, **kwargs):
         time = f"{kwargs['date']}, {kwargs['hour']}"
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
         prediction = kwargs['win_prob']
         played_matches = kwargs['matches_count']
-        competition = f"{kwargs['comp']} (Conf: {kwargs['confidence']})"
+        competition = f"{kwargs['comp']} (conf: {kwargs['confidence']})"
         prediction_percent = f"[bold][green]{str(round(prediction, 2))}%[/green][/bold]"
 
         try:
             corr_predictions = \
                 f"{round((kwargs['correct_pred'] / (kwargs['correct_pred'] + kwargs['wrong_pred'])) * 100)}%"
-            corr_predictions += f" (correct: {kwargs['correct_pred']}, wrong: {kwargs['wrong_pred']})"
+            corr_predictions += f" (correct {kwargs['correct_pred']}, wrong {kwargs['wrong_pred']})"
         except:
-            corr_predictions = f" (correct: {kwargs['correct_pred']}, wrong: {kwargs['wrong_pred']})"
+            corr_predictions = f" (correct {kwargs['correct_pred']}, wrong {kwargs['wrong_pred']})"
+
+        try:
+            corr_predictions_draw = \
+                f"{round((kwargs['correct_pred_draw'] / (kwargs['correct_pred_draw'] + kwargs['wrong_pred_draw'])) * 100)}%"
+            corr_predictions_draw += f" (correct {kwargs['correct_pred_draw']}, wrong {kwargs['wrong_pred_draw']})"
+        except:
+            corr_predictions_draw = f" (correct {kwargs['correct_pred_draw']}, wrong {kwargs['wrong_pred_draw']})"
 
         # populate the matches dict
         key = f"{time} {teams}"
@@ -50,7 +58,8 @@ class PrettyResults(metaclass=Singleton):
             "prediction": prediction_percent,
             "played_matches": played_matches,
             "competition": competition,
-            "corr_predictions": corr_predictions
+            "corr_predictions": corr_predictions,
+            "corr_predictions_draw": corr_predictions_draw
         }
 
     def order_matches(self):
@@ -66,7 +75,8 @@ class PrettyResults(metaclass=Singleton):
                 match["prediction"],
                 match["played_matches"],
                 match["competition"],
-                match["corr_predictions"]
+                match["corr_predictions"],
+                match["corr_predictions_draw"]
             )
 
     def see_predictions(self):

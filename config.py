@@ -92,6 +92,18 @@ MAP = {
         "comp_id": 29,
         "custom_link": True
     },
+    "Champions-League": {
+        "suffix": "Champions-League-Scores-and-Fixtures",
+        "comp_id": 8,
+    },
+    "Europa-League": {
+        "suffix": "Europa-League-Scores-and-Fixtures",
+        "comp_id": 19,
+    },
+    "Europa-Conf-League": {
+        "suffix": "Europa-Conference-League-Scores-and-Fixtures",
+        "comp_id": 882,
+    },
 }
 
 user_agents = [

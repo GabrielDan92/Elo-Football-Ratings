@@ -2,13 +2,14 @@ import pandas as pd
 
 
 class EloRatings:
-    def __init__(self, matches, confidence):
+    def __init__(self, matches, confidence, misc_league):
         self.matches = matches
         self.correct_pred = 0
         self.wrong_pred = 0
         self.correct_pred_draw = 0
         self.wrong_pred_draw = 0
         self.confidence = confidence
+        self.misc_league = misc_league
         self.elo = self.calculate_elo()
 
     def calculate_elo(self):
@@ -40,14 +41,16 @@ class EloRatings:
                 elo["ratings"][away_t] = 1500
 
             # calculate the probability for teams w/ more than 30 played matches
-            if elo["teams"][home_t] >= 30 and elo["teams"][away_t] >= 30:
-                win_prob = self.winning_prob(
-                    elo["ratings"][home_t], elo["ratings"][away_t]
-                )
+            if self.misc_league:
+                first_match = 0
+            else:
+                first_match = 30
+
+            if elo["teams"][home_t] >= first_match and elo["teams"][away_t] >= first_match:
+                win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
+
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
-                self.measure_win_perc_with_draw(
-                    win_prob=win_prob, home_s=home_s, away_s=away_s
-                )
+                self.measure_win_perc_with_draw(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[k]["prediction"] = round(win_prob, 2)
                 self.matches[k]["elo_home_bef"] = elo["ratings"][home_t]
@@ -76,12 +79,8 @@ class EloRatings:
                     home_weight = 0.5
                     away_weight = 0.5
 
-                elo["ratings"][home_t] = round(
-                    elo["ratings"][home_t] + k_home * (home_weight - win_prob)
-                )
-                elo["ratings"][away_t] = round(
-                    elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob))
-                )
+                elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
+                elo["ratings"][away_t] = round( elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
 
                 self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
                 self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
@@ -93,15 +92,16 @@ class EloRatings:
                 self.matches[k]["elo_away_bef"] = elo["ratings"][away_t]
 
                 # add 10 points for each win between matches 15-30
-                if 15 <= elo["teams"][home_t] < 30:
-                    if home_s > away_s:
-                        elo["ratings"][home_t] += 10
-                    self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
+                if not self.misc_league:
+                    if 15 <= elo["teams"][home_t] < 30:
+                        if home_s > away_s:
+                            elo["ratings"][home_t] += 10
+                        self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
 
-                if 15 <= elo["teams"][away_t] < 30:
-                    if home_s < away_s:
-                        elo["ratings"][away_t] += 10
-                    self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
+                    if 15 <= elo["teams"][away_t] < 30:
+                        if home_s < away_s:
+                            elo["ratings"][away_t] += 10
+                        self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
 
         return elo
 
@@ -116,13 +116,14 @@ class EloRatings:
 
     def winning_prob(self, home_rating, away_rating):
         # probability of winning
-        return 1 / (1 + pow(10, (away_rating - home_rating) / 600))
+        if not self.misc_league:
+            return 1 / (1 + pow(10, (away_rating - home_rating) / 600))
+        else:
+            return 1 / (1 + pow(10, (away_rating - home_rating) / 400))
 
     def query_interface(self, home_team_details, away_team):
         date, hour, home_team = home_team_details
-        win_prob = self.winning_prob(
-            self.elo["ratings"][home_team], self.elo["ratings"][away_team]
-        )
+        win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
         s = ""
 
         if win_prob <= 0.3 or win_prob >= self.confidence:
@@ -134,15 +135,17 @@ class EloRatings:
             print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
                   f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
 
-    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, correct_pred, wrong_pred, confidence):
+    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, confidence):
         date, hour, home_team = home_team_details
         win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
         msg = ""
 
         if self.elo["teams"][home_team] < 30:
-            msg += f'{home_team} ({self.elo["teams"][home_team]}) '
+            msg += f'{home_team} ({self.elo["teams"][home_team]})'
+            if self.elo["teams"][away_team] < 30:
+                msg += ", "
         if self.elo["teams"][away_team] < 30:
-            msg += f'{away_team} ({self.elo["teams"][away_team]}) '
+            msg += f'{away_team} ({self.elo["teams"][away_team]})'
 
         kwargs_dict = {
             "date": date,
@@ -153,12 +156,17 @@ class EloRatings:
             "matches_count": msg,
             "comp": comp,
             "confidence": confidence,
-            "correct_pred": correct_pred,
-            "wrong_pred": wrong_pred
+            "correct_pred": self.correct_pred,
+            "wrong_pred": self.wrong_pred,
+            "correct_pred_draw": self.correct_pred_draw,
+            "wrong_pred_draw": self.wrong_pred_draw
         }
 
-        if win_prob <= 0.3 or win_prob >= self.confidence:
+        if self.misc_league:
             pretty.save_matches(**kwargs_dict)
+        else:
+            if win_prob <= 0.3 or win_prob >= self.confidence:
+                pretty.save_matches(**kwargs_dict)
 
     def measure_win_perc(self, win_prob, home_s, away_s):
         if win_prob >= self.confidence and home_s > away_s:
