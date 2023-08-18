@@ -4,9 +4,20 @@ from rich import print
 
 class Singleton(type):
     """
-    Each competition has its own ExtractMatches() instance that sends the scheduled matches to the rich table.
-    Using the singleton approach I can save all matches in one table and only print it at the end,
-    instead of having a different table for each competition.
+    Implements the Singleton design pattern for the ExtractMatches class.
+
+    This metaclass ensures that each competition has its own instance of the ExtractMatches class, and it manages
+    sending scheduled matches to a shared rich table. By using the Singleton approach, all matches are consolidated
+    into a single table, which is only printed at the end. This approach eliminates the need for multiple tables for
+    each competition.
+
+    Attributes:
+        _instances (dict): A dictionary to store instances of classes using this metaclass.
+
+    Methods:
+        __call__(*args, **kwargs): Creates and returns a new instance if it doesn't exist, otherwise returns the
+        existing instance.
+
     """
     _instances = {}
 
@@ -16,7 +27,25 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class PrettyResults(metaclass=Singleton):
+class RichTable(metaclass=Singleton):
+    """
+    Singleton class to manage and display match prediction data in a rich table.
+
+    Provides functionality to save match info, calculate correct prediction percentages,
+    order matches, and display predictions using `rich` library.
+
+    Attributes:
+        matches (dict): Store match predictions.
+        table (Table): Rich Table object for display.
+
+    Methods:
+        save_matches(**kwargs): Save match info in matches dict.
+        calculate_correct_predictions(kwargs, correct_key, wrong_key): Calculate and format correct prediction %.
+        order_matches(): Order matches based on time.
+        add_table_rows(matches): Add rows to rich Table.
+        see_predictions(): Display predictions in formatted table.
+    """
+
     def __init__(self):
         self.matches = {}
         self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
@@ -31,24 +60,11 @@ class PrettyResults(metaclass=Singleton):
     def save_matches(self, **kwargs):
         time = f"{kwargs['date']}, {kwargs['hour']}"
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
-        prediction = kwargs['win_prob']
         played_matches = kwargs['matches_count']
         competition = f"{kwargs['comp']} (conf: {kwargs['confidence']})"
-        prediction_percent = f"[bold][green]{str(round(prediction, 2))}%[/green][/bold]"
-
-        try:
-            corr_predictions = \
-                f"{round((kwargs['correct_pred'] / (kwargs['correct_pred'] + kwargs['wrong_pred'])) * 100)}%"
-            corr_predictions += f" (correct {kwargs['correct_pred']}, wrong {kwargs['wrong_pred']})"
-        except:
-            corr_predictions = f" (correct {kwargs['correct_pred']}, wrong {kwargs['wrong_pred']})"
-
-        try:
-            corr_predictions_draw = \
-                f"{round((kwargs['correct_pred_draw'] / (kwargs['correct_pred_draw'] + kwargs['wrong_pred_draw'])) * 100)}%"
-            corr_predictions_draw += f" (correct {kwargs['correct_pred_draw']}, wrong {kwargs['wrong_pred_draw']})"
-        except:
-            corr_predictions_draw = f" (correct {kwargs['correct_pred_draw']}, wrong {kwargs['wrong_pred_draw']})"
+        prediction_percent = f"[bold][green]{str(round(kwargs['win_prob'], 2))}%[/green][/bold]"
+        corr_predictions = self.calculate_correct_predictions(kwargs, 'correct_pred', 'wrong_pred')
+        corr_predictions_draw = self.calculate_correct_predictions(kwargs, 'correct_pred_draw', 'wrong_pred_draw')
 
         # populate the matches dict
         key = f"{time} {teams}"
@@ -62,8 +78,14 @@ class PrettyResults(metaclass=Singleton):
             "corr_predictions_draw": corr_predictions_draw
         }
 
+    def calculate_correct_predictions(self, kwargs, correct_key, wrong_key):
+        try:
+            correct_percentage = (kwargs[correct_key] / (kwargs[correct_key] + kwargs[wrong_key])) * 100
+            return f"{round(correct_percentage)}% (correct {kwargs[correct_key]}, wrong {kwargs[wrong_key]})"
+        except ZeroDivisionError:
+            return f" (correct {kwargs[correct_key]}, wrong {kwargs[wrong_key]})"
     def order_matches(self):
-        # order the matches in ascending order
+        # order the matches in ascending date order
         sorted_matches = dict(sorted(self.matches.items()))
         self.add_table_rows(matches=sorted_matches)
 

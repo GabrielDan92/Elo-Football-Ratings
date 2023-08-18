@@ -2,6 +2,34 @@ import pandas as pd
 
 
 class EloRatings:
+    """
+    A class for managing Elo ratings and match predictions.
+
+    This class provides methods to calculate Elo ratings, winning probabilities,
+    measure prediction performance, display match probabilities, and export results.
+
+        Attributes:
+        matches (dict): Match data.
+        correct_pred (int): Correct predictions (no draws).
+        wrong_pred (int): Wrong predictions.
+        correct_pred_draw (int): Correct predictions (with draws).
+        wrong_pred_draw (int): Wrong predictions (with draws).
+        confidence (float): Confidence threshold for predictions.
+        misc_league (bool): Miscellaneous league.
+
+    Methods:
+        calculate_elo(): Calculate Elo ratings and probabilities.
+        winning_prob(home_rating, away_rating): Calculate win probability.
+        get_win_prob_write_table(table, home_team_details, away_team, comp, confidence): Send to rich table.
+        measure_win_perc(win_prob, home_s, away_s): Measure prediction performance.
+        see_win_perc(competition_name): Display prediction performance.
+        export_results(competition_name): Export results to CSV.
+
+    Parameters:
+        matches (dict): Match data.
+        confidence (float): Confidence threshold for predictions.
+        misc_league (bool): Miscellaneous league.
+    """
     def __init__(self, matches, confidence, misc_league):
         self.matches = matches
         self.correct_pred = 0
@@ -10,6 +38,8 @@ class EloRatings:
         self.wrong_pred_draw = 0
         self.confidence = confidence
         self.misc_league = misc_league
+
+        # calculate the winning probability
         self.elo = self.calculate_elo()
 
     def calculate_elo(self):
@@ -34,23 +64,22 @@ class EloRatings:
                 self.matches[k]["elo_away_aft"] = None
                 continue
 
-            # add default ratings
-            if home_t not in elo["ratings"]:
-                elo["ratings"][home_t] = 1500
-            if away_t not in elo["ratings"]:
-                elo["ratings"][away_t] = 1500
+            # add a default starting rating
+            elo["ratings"].setdefault(home_t, 1500)
+            elo["ratings"].setdefault(away_t, 1500)
 
-            # calculate the probability for teams w/ more than 30 played matches
+            # calculate the winning probability for the home team
             if self.misc_league:
+                # target all teams in international leagues (Champions League, etc.)
                 first_match = 0
             else:
+                # only target teams w/ >30 played matches in domestic leagues
                 first_match = 30
 
             if elo["teams"][home_t] >= first_match and elo["teams"][away_t] >= first_match:
                 win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
 
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
-                self.measure_win_perc_with_draw(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[k]["prediction"] = round(win_prob, 2)
                 self.matches[k]["elo_home_bef"] = elo["ratings"][home_t]
@@ -61,26 +90,34 @@ class EloRatings:
                 k_away = self.get_k_value(elo["ratings"][away_t])
 
                 # recalculate the ratings based on the match result
+                outcome_weights = {
+                    "win": {"home": 1, "away": 0},
+                    "loss": {"home": 0, "away": 1},
+                    "tie": {"home": 0.5, "away": 0.5}
+                }
                 if home_s > away_s:
-                    home_weight = 1
-                    away_weight = 0
-                    if win_prob <= 0.3:
-                        k_home *= 1.5  # if the home team had <= 30% chances of winning and won, award it 50% more
-                        k_away *= 1.5  # if the away team had >= 70% chances of winning and lost, penalize it 50% more
+                    outcome = "win"
+                elif home_s < away_s:
+                    outcome = "loss"
+                else:
+                    outcome = "tie"
 
-                if home_s < away_s:
-                    home_weight = 0
-                    away_weight = 1
-                    if win_prob >= 0.7:
-                        k_home *= 1.5  # if the home team had >= 70% chances of winning and lost, penalize it 50% more
-                        k_away *= 1.5  # if the away team had <= 30% chances of winning and won, award it 50% more
+                home_weight = outcome_weights[outcome]["home"]
+                away_weight = outcome_weights[outcome]["away"]
+                # home advantage?
+                # home_weight = outcome_weights[outcome]["home"] * 0.92
+                # away_weight = outcome_weights[outcome]["away"] * 1.08
 
-                if home_s == away_s:
-                    home_weight = 0.5
-                    away_weight = 0.5
+                # award +50% if home team won with <= 30% predicted chance of winning
+                # penalize +50% if home team lost with >= 70% predicted chance of winning
+                k_home *= 1.5 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7) else 1
+
+                # award +50% if away team won with <= 30% predicted chance of winning
+                # penalize +50% if away team lost with >= 70% predicted chance of winning
+                k_away *= 1.5 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7) else 1
 
                 elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
-                elo["ratings"][away_t] = round( elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
+                elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
 
                 self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
                 self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
@@ -91,35 +128,45 @@ class EloRatings:
                 self.matches[k]["elo_home_bef"] = elo["ratings"][home_t]
                 self.matches[k]["elo_away_bef"] = elo["ratings"][away_t]
 
-                # add 10 points for each win between matches 15-30
+                # add 10 points for each win between matches 15-29 for domestic leagues (no Champions League, etc.)
                 if not self.misc_league:
-                    if 15 <= elo["teams"][home_t] < 30:
-                        if home_s > away_s:
-                            elo["ratings"][home_t] += 10
+                    home_played_games = elo["teams"][home_t]
+                    away_played_games = elo["teams"][away_t]
+
+                    if 15 <= home_played_games < 30 and home_s > away_s:
+                        elo["ratings"][home_t] += 10
                         self.matches[k]["elo_home_aft"] = elo["ratings"][home_t]
 
-                    if 15 <= elo["teams"][away_t] < 30:
-                        if home_s < away_s:
-                            elo["ratings"][away_t] += 10
+                    if 15 <= away_played_games < 30 and home_s < away_s:
+                        elo["ratings"][away_t] += 10
                         self.matches[k]["elo_away_aft"] = elo["ratings"][away_t]
 
         return elo
 
-    def get_k_value(self, rating):
-        # prevent rating inflation
+    def get_k_value(self, rating: int) -> int:
+        """
+        Prevent rating inflation: calculate the K-value for Elo rating adjustments based on the given rating.
+        The K-value determines the magnitude of rating adjustments based on the current rating.
+        Higher K-values lead to larger adjustments and vice versa.
+
+        Parameters:
+            rating (int): The Elo rating for which to determine the K-value.
+
+        Returns:
+            int: The calculated K-value based on the rating.
+
+        """
         if rating < 1300:
             return 40
-        if 1300 <= rating <= 1550:
+        elif rating <= 1550:
             return 20
-        if rating > 1550:
+        else:
             return 10
 
     def winning_prob(self, home_rating, away_rating):
         # probability of winning
-        if not self.misc_league:
-            return 1 / (1 + pow(10, (away_rating - home_rating) / 600))
-        else:
-            return 1 / (1 + pow(10, (away_rating - home_rating) / 400))
+        divisor = 600 if not self.misc_league else 400
+        return 1 / (1 + pow(10, (away_rating - home_rating) / divisor))
 
     def query_interface(self, home_team_details, away_team):
         date, hour, home_team = home_team_details
@@ -135,11 +182,12 @@ class EloRatings:
             print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
                   f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
 
-    def pretty_query_interface(self, pretty, home_team_details, away_team, comp, confidence):
+    def get_win_prob_write_table(self, table, home_team_details, away_team, comp, confidence):
         date, hour, home_team = home_team_details
         win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
         msg = ""
 
+        # identify teams with <30 played games
         if self.elo["teams"][home_team] < 30:
             msg += f'{home_team} ({self.elo["teams"][home_team]})'
             if self.elo["teams"][away_team] < 30:
@@ -162,31 +210,42 @@ class EloRatings:
             "wrong_pred_draw": self.wrong_pred_draw
         }
 
-        if self.misc_league:
-            pretty.save_matches(**kwargs_dict)
-        else:
-            if win_prob <= 0.3 or win_prob >= self.confidence:
-                pretty.save_matches(**kwargs_dict)
+        if self.misc_league or (win_prob <= 0.3 or win_prob >= self.confidence):
+            # save all Champions League, Europa League etc. matches in the table
+            # save only domestic leagues matches with a specific win_prob
+            table.save_matches(**kwargs_dict)
 
     def measure_win_perc(self, win_prob, home_s, away_s):
-        if win_prob >= self.confidence and home_s > away_s:
-            self.correct_pred += 1
-        elif win_prob >= self.confidence and (home_s < away_s or home_s == away_s):
-            self.wrong_pred += 1
-        if win_prob <= 0.3 and home_s < away_s:
-            self.correct_pred += 1
-        elif win_prob <= 0.3 and (home_s > away_s or home_s == away_s):
-            self.wrong_pred += 1
+        if win_prob >= self.confidence:
+            if home_s == away_s:
+                # draw
+                self.correct_pred_draw += 1
+                self.wrong_pred += 1
 
-    def measure_win_perc_with_draw(self, win_prob, home_s, away_s):
-        if win_prob >= self.confidence and (home_s > away_s or home_s == away_s):
-            self.correct_pred_draw += 1
-        elif win_prob >= self.confidence and home_s < away_s:
-            self.wrong_pred_draw += 1
-        if win_prob <= 0.3 and (home_s < away_s or home_s == away_s):
-            self.correct_pred_draw += 1
-        elif win_prob <= 0.3 and home_s > away_s:
-            self.wrong_pred_draw += 1
+            if home_s > away_s:
+                # home team won, expected based on win_probability
+                self.correct_pred += 1
+                self.correct_pred_draw += 1
+
+            if home_s < away_s:
+                # home team lost, unexpected based on win_probability
+                self.wrong_pred += 1
+                self.wrong_pred_draw += 1
+        elif win_prob <= 0.3:
+            if home_s == away_s:
+                # draw
+                self.correct_pred_draw += 1
+                self.wrong_pred += 1
+
+            if home_s < away_s:
+                # home team lost, expected based on win_probability
+                self.correct_pred += 1
+                self.correct_pred_draw += 1
+
+            if home_s > away_s:
+                # home team won, unexpected based on win_probability
+                self.wrong_pred += 1
+                self.wrong_pred_draw += 1
 
     def see_win_perc(self, competition_name):
         msg = f"{competition_name.upper()}:\n" \
@@ -207,20 +266,22 @@ class EloRatings:
     def get_win_perc(self):
         return self.correct_pred, self.wrong_pred
 
-    def export_results(self, competition_name):
-        df = pd.DataFrame(
-            {
-                "date": self.matches.keys(),
-                "home_team": [v["home_team"] for v in self.matches.values()],
-                "away_team": [v["away_team"] for v in self.matches.values()],
-                "home_score": [v["home_score"] for v in self.matches.values()],
-                "away_score": [v["away_score"] for v in self.matches.values()],
-                "prediction": [v["prediction"] for v in self.matches.values()],
-                "elo_home_bef": [v["elo_home_bef"] for v in self.matches.values()],
-                "elo_home_aft": [v["elo_home_aft"] for v in self.matches.values()],
-                "elo_away_bef": [v["elo_away_bef"] for v in self.matches.values()],
-                "elo_away_aft": [v["elo_away_aft"] for v in self.matches.values()],
-            }
-        )
+    def export_results(self, competition_name: str) -> None:
+        """
+        Export match results, incl. date, teams, scores, predictions, and Elo ratings to a CSV.
 
-        df.to_csv(f"{competition_name}.csv", encoding="utf-8-sig")
+        Params:
+            competition_name (str): Name for CSV file.
+
+        Notes:
+            CSV columns:
+            - date, home_team, away_team, home_score, away_score
+            - prediction, elo_home_bef, elo_home_aft, elo_away_bef, elo_away_aft
+
+        Returns:
+            None
+        """
+        df = pd.DataFrame(self.matches.values())
+        df["date"] = self.matches.keys()
+        df = df.reindex(columns=["date"] + list(df.columns[:-1]))
+        df.to_csv(f"archive/{competition_name}.csv", encoding="utf-8-sig", index=False)
