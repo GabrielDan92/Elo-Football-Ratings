@@ -1,106 +1,106 @@
 MAP = {
-    "RO-Liga-1": {
+    "RO Liga 1": {
         "suffix": "Liga-I-Scores-and-Fixtures",
         "comp_id": 47,
     },
-    "UK-Premier-League": {
+    "UK Premier League": {
         "suffix": "Premier-League-Scores-and-Fixtures",
         "comp_id": 9,
     },
-    "SPAIN-La-Liga": {
+    "SPAIN La Liga": {
         "suffix": "La-Liga-Scores-and-Fixtures",
         "comp_id": 12,
     },
-    "DE-Bundesliga": {
+    "DE Bundesliga": {
         "suffix": "Bundesliga-Scores-and-Fixtures",
         "comp_id": 20,
     },
-    "IT-Serie-A": {
+    "IT Serie A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 11,
     },
-    "FRANCE-Ligue-1": {
+    "FRANCE Ligue 1": {
         "suffix": "Ligue-1-Scores-and-Fixtures",
         "comp_id": 13,
     },
-    "BELGIA-Pro-League": {
+    "BELGIA Pro League": {
         "suffix": "Belgian-Pro-League-Scores-and-Fixtures",
         "comp_id": 37,
     },
-    "BRAZIL-Serie-A": {
+    "BRAZIL Serie A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 24,
         "custom_link": True
     },
-    "CROATIA-League": {
+    "CROATIA League": {
         "suffix": "Hrvatska-NL-Scores-and-Fixtures",
         "comp_id": 63,
     },
-    "CZECH-League": {
+    "CZECH League": {
         "suffix": "Czech-First-League-Scores-and-Fixtures",
         "comp_id": 66,
     },
-    "NETHERL-League": {
+    "NETHERL League": {
         "suffix": "Eredivisie-Scores-and-Fixtures",
         "comp_id": 23,
     },
-    "SCOTLAND-League": {
+    "SCOTLAND League": {
         "suffix": "Scottish-Premiership-Scores-and-Fixtures",
         "comp_id": 40,
     },
-    "ARG-Primera-Division": {
+    "ARG Primera Division": {
         "suffix": "Primera-Division-Scores-and-Fixtures",
         "comp_id": 21,
         "custom_link": True
     },
-    "AUSTRALIA-League": {
+    "AUSTRALIA League": {
         "suffix": "A-League-Men-Scores-and-Fixtures",
         "comp_id": 65,
     },
-    "AUSTRIA-Bundesliga": {
+    "AUSTRIA Bundesliga": {
         "suffix": "Austrian-Bundesliga-Scores-and-Fixtures",
         "comp_id": 56,
     },
-    "DENMRK-Superliga": {
+    "DENMRK Superliga": {
         "suffix": "Superliga-Scores-and-Fixtures",
         "comp_id": 50,
     },
-    "FINLAND-Veikkausliiga": {
+    "FINLAND Veikkausliiga": {
         "suffix": "Veikkausliiga-Scores-and-Fixtures",
         "comp_id": 43,
         "custom_link": True
     },
-    "GREEK-Superliga": {
+    "GREEK Superliga": {
         "suffix": "Super-League-Greece-Scores-and-Fixtures",
         "comp_id": 27,
     },
-    "PORTUGAL-Superliga": {
+    "PORTUGAL Superliga": {
         "suffix": "Primeira-Liga-Scores-and-Fixtures",
         "comp_id": 32,
     },
-    "POLAND-Ekstraklasa": {
+    "POLAND Ekstraklasa": {
         "suffix": "Ekstraklasa-Scores-and-Fixtures",
         "comp_id": 36,
     },
-    "NORWAY-Eliteserien": {
+    "NORWAY Eliteserien": {
         "suffix": "Eliteserien-Scores-and-Fixtures",
         "comp_id": 28,
         "custom_link": True
     },
-    "SWEDEN-Allsvenskan": {
+    "SWEDEN Allsvenskan": {
         "suffix": "Allsvenskan-Scores-and-Fixtures",
         "comp_id": 29,
         "custom_link": True
     },
-    "Champions-League": {
+    "Champions League": {
         "suffix": "Champions-League-Scores-and-Fixtures",
         "comp_id": 8,
     },
-    "Europa-League": {
+    "Europa League": {
         "suffix": "Europa-League-Scores-and-Fixtures",
         "comp_id": 19,
     },
-    "Europa-Conf-League": {
+    "Europa Conf League": {
         "suffix": "Europa-Conference-League-Scores-and-Fixtures",
         "comp_id": 882,
     },
