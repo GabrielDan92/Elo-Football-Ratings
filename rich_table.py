@@ -52,7 +52,6 @@ class RichTable(metaclass=Singleton):
         self.table.add_column("Match time", no_wrap=True, style="cyan")
         self.table.add_column("Teams", no_wrap=True, style="cyan")
         self.table.add_column("Prediction", no_wrap=True, justify="center")
-        self.table.add_column("<30 played matches", no_wrap=True, style="cyan")
         self.table.add_column("Competition", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions w/ draws", no_wrap=True, style="cyan")
@@ -60,9 +59,8 @@ class RichTable(metaclass=Singleton):
     def save_matches(self, **kwargs):
         time = f"{kwargs['date']}, {kwargs['hour']}"
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
-        played_matches = kwargs['matches_count']
-        competition = f"{kwargs['comp']} (conf: {kwargs['confidence']})"
-        prediction_percent = f"[bold][green]{str(round(kwargs['win_prob'], 2))}%[/green][/bold]"
+        competition = f"{kwargs['comp']} ({round(kwargs['confidence']*100)}% confidence)"
+        prediction_percent = f"[bold][green]{str(round(kwargs['win_prob']*100))}%[/green][/bold]"
         corr_predictions = self.calculate_correct_predictions(kwargs, 'correct_pred', 'wrong_pred')
         corr_predictions_draw = self.calculate_correct_predictions(kwargs, 'correct_pred_draw', 'wrong_pred_draw')
 
@@ -72,7 +70,6 @@ class RichTable(metaclass=Singleton):
             "time": time,
             "teams": teams,
             "prediction": prediction_percent,
-            "played_matches": played_matches,
             "competition": competition,
             "corr_predictions": corr_predictions,
             "corr_predictions_draw": corr_predictions_draw
@@ -96,7 +93,6 @@ class RichTable(metaclass=Singleton):
                 match["time"],
                 match["teams"],
                 match["prediction"],
-                match["played_matches"],
                 match["competition"],
                 match["corr_predictions"],
                 match["corr_predictions_draw"]
