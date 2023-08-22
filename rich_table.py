@@ -84,6 +84,7 @@ class RichTable(metaclass=Singleton):
             return f"{round(correct_percentage)}% (correct {kwargs[correct_key]}, wrong {kwargs[wrong_key]})"
         except ZeroDivisionError:
             return f" (correct {kwargs[correct_key]}, wrong {kwargs[wrong_key]})"
+
     def order_matches(self):
         # order the matches in ascending date order
         sorted_matches = dict(sorted(self.matches.items()))
