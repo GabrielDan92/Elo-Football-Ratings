@@ -30,6 +30,7 @@ class EloRatings:
         confidence (float): Confidence threshold for predictions.
         misc_league (bool): Miscellaneous league.
     """
+
     def __init__(self, matches, confidence, misc_league):
         self.matches = matches
         self.correct_pred = 0
@@ -104,19 +105,11 @@ class EloRatings:
 
                 home_weight = outcome_weights[outcome]["home"]
                 away_weight = outcome_weights[outcome]["away"]
-                # home advantage?
-                # home_weight = outcome_weights[outcome]["home"] * 0.92
-                # away_weight = outcome_weights[outcome]["away"] * 1.08
 
-                # TODO: rewrite to use one if 
-                
-                # award +50% if home team won with <= 30% predicted chance of winning
-                # penalize +50% if home team lost with >= 70% predicted chance of winning
-                k_home *= 1.5 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7) else 1
-                
-                # award +50% if away team won with <= 30% predicted chance of winning
-                # penalize +50% if away team lost with >= 70% predicted chance of winning
-                k_away *= 1.5 if (outcome == "loss" and win_prob >= 0.7) or (outcome == "win" and win_prob <= 0.3) else 1
+                # award or penalize the teams +50% if the outcome was not expected
+                if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7):
+                    k_home *= 1.5
+                    k_away *= 1.5
 
                 elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
                 elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
@@ -131,7 +124,6 @@ class EloRatings:
                 self.matches[k]["elo_away_bef"] = elo["ratings"][away_t]
 
                 # add 10 points for each win between matches 15-29 for domestic leagues (no Champions League, etc.)
-                # TODO: penalize teams for lost games
                 if not self.misc_league:
                     home_played_games = elo["teams"][home_t]
                     away_played_games = elo["teams"][away_t]
@@ -169,21 +161,18 @@ class EloRatings:
     def winning_prob(self, home_rating, away_rating):
         # probability of winning
         divisor = 600 if not self.misc_league else 400
-        
+
         return 1 / (1 + pow(10, (away_rating - home_rating) / divisor))
 
-    def get_win_prob_write_table(self, table, home_team_details, away_team, comp, confidence):
+    def get_win_prob_write_table(self, table, home_team_details, away_team, comp):
         date, hour, home_team = home_team_details
         win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
-        msg = ""
 
         # identify teams with <30 played games
         if self.elo["teams"][home_team] < 30:
-            msg += f'{home_team} ({self.elo["teams"][home_team]})'
-            if self.elo["teams"][away_team] < 30:
-                msg += ", "
+            home_team += f' ({self.elo["teams"][home_team]})'
         if self.elo["teams"][away_team] < 30:
-            msg += f'{away_team} ({self.elo["teams"][away_team]})'
+            away_team += f' ({self.elo["teams"][away_team]})'
 
         kwargs_dict = {
             "date": date,
@@ -191,9 +180,8 @@ class EloRatings:
             "home_team": home_team,
             "away_team": away_team,
             "win_prob": win_prob,
-            "matches_count": msg,
             "comp": comp,
-            "confidence": confidence,
+            "confidence": self.confidence,
             "correct_pred": self.correct_pred,
             "wrong_pred": self.wrong_pred,
             "correct_pred_draw": self.correct_pred_draw,
@@ -242,7 +230,7 @@ class EloRatings:
 
     def export_results(self, competition_name: str) -> None:
         """
-        Export match results, incl. date, teams, scores, predictions, and Elo ratings to a CSV.
+        Export played matches results, including date, teams, scores, predictions, and Elo ratings to a CSV.
 
         Params:
             competition_name (str): Name for CSV file.
