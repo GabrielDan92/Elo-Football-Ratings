@@ -108,13 +108,15 @@ class EloRatings:
                 # home_weight = outcome_weights[outcome]["home"] * 0.92
                 # away_weight = outcome_weights[outcome]["away"] * 1.08
 
+                # TODO: rewrite to use one if 
+                
                 # award +50% if home team won with <= 30% predicted chance of winning
                 # penalize +50% if home team lost with >= 70% predicted chance of winning
                 k_home *= 1.5 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7) else 1
-
+                
                 # award +50% if away team won with <= 30% predicted chance of winning
                 # penalize +50% if away team lost with >= 70% predicted chance of winning
-                k_away *= 1.5 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7) else 1
+                k_away *= 1.5 if (outcome == "loss" and win_prob >= 0.7) or (outcome == "win" and win_prob <= 0.3) else 1
 
                 elo["ratings"][home_t] = round(elo["ratings"][home_t] + k_home * (home_weight - win_prob))
                 elo["ratings"][away_t] = round(elo["ratings"][away_t] + k_away * (away_weight - (1 - win_prob)))
@@ -129,6 +131,7 @@ class EloRatings:
                 self.matches[k]["elo_away_bef"] = elo["ratings"][away_t]
 
                 # add 10 points for each win between matches 15-29 for domestic leagues (no Champions League, etc.)
+                # TODO: penalize teams for lost games
                 if not self.misc_league:
                     home_played_games = elo["teams"][home_t]
                     away_played_games = elo["teams"][away_t]
@@ -166,21 +169,8 @@ class EloRatings:
     def winning_prob(self, home_rating, away_rating):
         # probability of winning
         divisor = 600 if not self.misc_league else 400
+        
         return 1 / (1 + pow(10, (away_rating - home_rating) / divisor))
-
-    def query_interface(self, home_team_details, away_team):
-        date, hour, home_team = home_team_details
-        win_prob = self.winning_prob(self.elo["ratings"][home_team], self.elo["ratings"][away_team])
-        s = ""
-
-        if win_prob <= 0.3 or win_prob >= self.confidence:
-            if self.elo["teams"][home_team] < 30:
-                s += f" Keep in mind that {home_team} has only {self.elo['teams'][home_team]} matches played."
-            if self.elo["teams"][away_team] < 30:
-                s += f" Keep in mind that {away_team} has only {self.elo['teams'][away_team]} matches played."
-
-            print(f"{date} {hour} - {home_team} [Elo {self.elo['ratings'][home_team]}] has a {round(win_prob * 100)}% "
-                  f"chance to win against {away_team} [Elo {self.elo['ratings'][away_team]}].{s}")
 
     def get_win_prob_write_table(self, table, home_team_details, away_team, comp, confidence):
         date, hour, home_team = home_team_details
@@ -246,22 +236,6 @@ class EloRatings:
                 # home team won, unexpected based on win_probability
                 self.wrong_pred += 1
                 self.wrong_pred_draw += 1
-
-    def see_win_perc(self, competition_name):
-        msg = f"{competition_name.upper()}:\n" \
-              f"Correct predictions w/out draws: {self.correct_pred}, " \
-              f"Wrong predictions: {self.wrong_pred}.\n" \
-              f"Correct predictions w/ draws: {self.correct_pred_draw}, " \
-              f"Wrong predictions: {self.wrong_pred_draw}.\n"
-
-        if not min(self.correct_pred, self.wrong_pred) == 0:
-            msg += f"Accurate predictions w/out draws: " \
-                   f"{round((self.correct_pred / (self.correct_pred + self.wrong_pred)) * 100)}%\n"
-        if not min(self.correct_pred_draw, self.wrong_pred_draw) == 0:
-            msg += f"Accurate predictions w/ draws: " \
-                   f"{round((self.correct_pred_draw / (self.correct_pred_draw + self.wrong_pred_draw)) * 100)}%\n"
-
-        print(msg)
 
     def get_win_perc(self):
         return self.correct_pred, self.wrong_pred
