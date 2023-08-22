@@ -1,7 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-from elo_ratings import EloRatings
-from rich_table import RichTable
 from config import MAP, user_agents
 import pandas as pd
 import datetime
@@ -39,18 +37,10 @@ class ExtractMatches:
         export_results (bool): Export match results to CSV (default: False).
         misc_league (bool): Miscellaneous league indicator (default: False).
     """
-    def __init__(
-        self,
-        comp,
-        start_year,
-        confidence,
-        export_results=False,
-        misc_league=False
-    ):
+    def __init__(self, comp, start_year):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
-        self.confidence = confidence
         self.export_path = f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
 
         # get played matches from start year until previous year
@@ -58,24 +48,6 @@ class ExtractMatches:
 
         # extract current year's played and future matches
         self.extract_current_season_data(comp)
-
-        # instantiate the EloRatings class, get the future matches winning prob and write the results in a table
-        elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence, misc_league=misc_league)
-
-        for k, v in self.get_future_matches().items():
-            try:
-                elo.get_win_prob_write_table(
-                    RichTable(),
-                    home_team_details=k,
-                    away_team=v,
-                    comp=comp,
-                    confidence=confidence
-                )
-            except:
-                continue
-
-        if export_results:
-            elo.export_results(competition_name=comp)
 
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
@@ -132,8 +104,9 @@ class ExtractMatches:
                     "away_score": score.replace("–", "-")[2],
                 }
             elif date and hour:
-                # or we don't have a score, so this is a future game *if it has a scheduled date & hour
-                self.future_matches[date, hour, home_team] = away_team
+                if datetime.datetime.strptime(date, "%Y-%m-%d").date() >= datetime.date.today():
+                    # or we don't have a score, so this is a future game *if it has a scheduled date & hour
+                    self.future_matches[date, hour, home_team] = away_team
 
         # prevent making more than 20 requests per minute
         time.sleep(3.1)
