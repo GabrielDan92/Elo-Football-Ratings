@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from config import MAP, user_agents
-import pandas as pd
+from postgres import PostgreSQL
 import datetime
 import time
 import random
@@ -18,7 +18,6 @@ class ExtractMatches:
         matches (dict): Played match data dictionary.
         future_matches (dict): Future match data dictionary.
         main_link (str): Base URL for fetching competition data.
-        confidence (float): Match prediction confidence level.
         export_path (str): Path for exporting match data to CSV.
 
     Methods:
@@ -33,40 +32,39 @@ class ExtractMatches:
     Parameters:
         comp (str): Competition name.
         start_year (int): Starting year for data extraction.
-        confidence (float): Match prediction confidence level.
-        export_results (bool): Export match results to CSV (default: False).
-        misc_league (bool): Miscellaneous league indicator (default: False).
     """
     def __init__(self, comp, start_year):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
         self.export_path = f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
+        self.comp = comp
+        self.db = PostgreSQL()
 
         # get played matches from start year until previous year
-        self.load_historic_data(start_year, comp)
+        self.load_historic_data(start_year)
 
         # extract current year's played and future matches
-        self.extract_current_season_data(comp)
+        self.extract_current_season_data()
 
-    def extract_historic_data(self, start_year, comp):
+    def extract_historic_data(self, start_year):
         curr_year = datetime.date.today().year
 
         while start_year < curr_year:
-            if "custom_link" in MAP[comp].keys():
+            if "custom_link" in MAP[self.comp].keys():
                 years = f"{start_year + 1}"
             else:
                 years = f"{start_year}-{start_year + 1}"
 
-            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
+            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
 
         # save the extracted matches locally to prevent extracting them in next runs
         self.export_historic_data()
 
-    def extract_current_season_data(self, comp):
-        url = f"{self.main_link}/schedule/{MAP[comp]['suffix']}"
+    def extract_current_season_data(self):
+        url = f"{self.main_link}/schedule/{MAP[self.comp]['suffix']}"
         self.parse_html(url=url)
 
     def parse_html(self, url):
@@ -112,38 +110,44 @@ class ExtractMatches:
         time.sleep(3.1)
 
     def export_historic_data(self):
-        pd.DataFrame(
-            {
-                "date": self.matches.keys(),
-                "home_team": [v["home_team"] for v in self.matches.values()],
-                "away_team": [v["away_team"] for v in self.matches.values()],
-                "home_score": [v["home_score"] for v in self.matches.values()],
-                "away_score": [v["away_score"] for v in self.matches.values()],
-            }
-        ).to_csv(self.export_path, encoding="utf-8-sig")
+        query = """
+            INSERT INTO played_games (date_hour, home_team, away_team, home_score, away_score, competition)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (date_hour, home_team) DO NOTHING
+        """
 
-    def load_historic_data(self, start_year, comp):
-        # extract or load played matches from start year until previous year
-        try:
-            data = pd.read_csv(self.export_path)
+        values = [(
+            f"{date.split(' ')[0]}, {date.split(' ')[1]}",
+            v["home_team"],
+            v["away_team"],
+            v["home_score"],
+            v["away_score"],
+            self.comp)
+            for date, v in self.matches.items()]
 
-            for i, row in data.iterrows():
-                date = row["date"]
-                home_team = row["home_team"]
-                away_team = row["away_team"]
-                home_score = row["home_score"]
-                away_score = row["away_score"]
+        self.db.batch_insert(query, values)
 
-                self.matches[f"{date}_({i})"] = {
-                    "home_team": home_team,
-                    "away_team": away_team,
-                    "home_score": home_score,
-                    "away_score": away_score,
+    def load_historic_data(self, start_year):
+        query_records_count = "SELECT count(*) from played_games WHERE date_hour LIKE %s AND competition = %s"
+        values = (f"{start_year}%", self.comp)
+        records_count = self.db.query(query_records_count, values)[0][0]
+
+        if records_count < 100:
+            # extract the matches if they are not already saved in the db
+            self.extract_historic_data(start_year)
+        else:
+            # load the matches from the db
+            query = f"""SELECT * from played_games WHERE competition = '{self.comp}'"""
+
+            records = self.db.query(query)
+
+            for i, record in enumerate(records):
+                self.matches[f"{record[0]}_({i})"] = {
+                    "home_team": record[1],
+                    "away_team": record[2],
+                    "home_score": record[3],
+                    "away_score": record[4],
                 }
-
-        except OSError:
-            # extract the matches if they are not already saved locally
-            self.extract_historic_data(start_year, comp)
 
     def get_played_matches(self):
         return self.matches

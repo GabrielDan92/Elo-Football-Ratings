@@ -1,30 +1,8 @@
 from rich.table import Table
 from rich import print
 
-
-class Singleton(type):
-    """
-    Implements the Singleton design pattern for the ExtractMatches class.
-
-    This metaclass ensures that each competition has its own instance of the ExtractMatches class, and it manages
-    sending scheduled matches to a shared rich table. By using the Singleton approach, all matches are consolidated
-    into a single table, which is only printed at the end. This approach eliminates the need for multiple tables for
-    each competition.
-
-    Attributes:
-        _instances (dict): A dictionary to store instances of classes using this metaclass.
-
-    Methods:
-        __call__(*args, **kwargs): Creates and returns a new instance if it doesn't exist, otherwise returns the
-        existing instance.
-
-    """
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+from postgres import PostgreSQL
+from singleton import Singleton
 
 
 class RichTable(metaclass=Singleton):
@@ -47,6 +25,7 @@ class RichTable(metaclass=Singleton):
     """
 
     def __init__(self):
+        self.db = PostgreSQL()
         self.matches = {}
         self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
         self.table.add_column("Match time", no_wrap=True, style="cyan")
@@ -61,6 +40,7 @@ class RichTable(metaclass=Singleton):
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
         competition = f"{kwargs['comp']} ({round(kwargs['confidence']*100)}% confidence)"
         prediction_percent = f"[bold][green]{str(round(kwargs['win_prob']*100))}%[/green][/bold]"
+        prediction_percent_raw = f"{str(round(kwargs['win_prob']*100))}%"
         corr_predictions = self.calculate_correct_predictions(kwargs, 'correct_pred', 'wrong_pred')
         corr_predictions_draw = self.calculate_correct_predictions(kwargs, 'correct_pred_draw', 'wrong_pred_draw')
 
@@ -70,6 +50,7 @@ class RichTable(metaclass=Singleton):
             "time": time,
             "teams": teams,
             "prediction": prediction_percent,
+            "prediction_raw": prediction_percent_raw,
             "competition": competition,
             "corr_predictions": corr_predictions,
             "corr_predictions_draw": corr_predictions_draw
@@ -88,6 +69,7 @@ class RichTable(metaclass=Singleton):
         self.add_table_rows(matches=sorted_matches)
 
     def add_table_rows(self, matches):
+
         for match in matches.values():
             self.table.add_row(
                 match["time"],
@@ -97,6 +79,29 @@ class RichTable(metaclass=Singleton):
                 match["corr_predictions"],
                 match["corr_predictions_draw"]
             )
+
+        values = [(
+            match["time"],
+            match["teams"],
+            match["prediction_raw"],
+            match["competition"],
+            match["corr_predictions"],
+            match["corr_predictions_draw"]) for match in matches.values()]
+
+        query = """
+            INSERT INTO scheduled_games (
+                match_time, 
+                teams, 
+                prediction, 
+                competition, 
+                correct_predictions, 
+                correct_predictions_with_draws
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (match_time, teams) DO NOTHING
+        """
+
+        self.db.batch_insert(query, values)
 
     def see_predictions(self):
         self.order_matches()

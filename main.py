@@ -2,10 +2,11 @@ import os
 from rich import print
 from extract_matches import ExtractMatches
 from elo_ratings import EloRatings
+from postgres import PostgreSQL
 from rich_table import RichTable
 
 leagues = [
-    {"comp": "AUSTRALIA Leaguegue", "start_year": 2017, "confidence": 0.6},
+    {"comp": "AUSTRALIA League", "start_year": 2017, "confidence": 0.6},
     {"comp": "GREEK Superliga", "start_year": 2018, "confidence": 0.6},     # 74%
     {"comp": "RO Liga 1", "start_year": 2019, "confidence": 0.6},           # 72%
     {"comp": "DE Bundesliga", "start_year": 2017, "confidence": 0.6},       # 69%
@@ -59,5 +60,8 @@ if __name__ == "__main__":
             elo.export_results(competition_name=league["comp"])
 
     RichTable().see_predictions()
+
+    db = PostgreSQL()
+    db.close_conn()
     print("[bold magenta]Press any key to end[/bold magenta]")
     input()
