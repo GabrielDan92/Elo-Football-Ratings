@@ -54,6 +54,10 @@ class EloRatings:
             elo["teams"][home_t] = elo["teams"].get(home_t, 0) + 1
             elo["teams"][away_t] = elo["teams"].get(away_t, 0) + 1
 
+            # add a default starting rating
+            elo["ratings"].setdefault(home_t, 1500)
+            elo["ratings"].setdefault(away_t, 1500)
+
             try:
                 home_s = int(self.matches[k]["home_score"])
                 away_s = int(self.matches[k]["away_score"])
@@ -65,21 +69,14 @@ class EloRatings:
                 self.matches[k]["elo_away_aft"] = None
                 continue
 
-            # add a default starting rating
-            elo["ratings"].setdefault(home_t, 1500)
-            elo["ratings"].setdefault(away_t, 1500)
-
-            # calculate the winning probability for the home team
-            if self.misc_league:
-                # target all teams in international leagues (Champions League, etc.)
-                first_match = 0
-            else:
-                # only target teams w/ >30 played matches in domestic leagues
-                first_match = 30
+            # target all teams in international leagues (Champions League, etc.)
+            # only target teams w/ >= 30 played matches in domestic leagues
+            first_match = 0 if self.misc_league else 30
 
             if elo["teams"][home_t] >= first_match and elo["teams"][away_t] >= first_match:
-                win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
 
+                # calculate the winning probability for the home team and check if the prediction was correct
+                win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[k]["prediction"] = round(win_prob, 2)
@@ -96,12 +93,7 @@ class EloRatings:
                     "loss": {"home": 0, "away": 1},
                     "tie": {"home": 0.5, "away": 0.5}
                 }
-                if home_s > away_s:
-                    outcome = "win"
-                elif home_s < away_s:
-                    outcome = "loss"
-                else:
-                    outcome = "tie"
+                outcome = "win" if home_s > away_s else "loss" if home_s < away_s else "tie"
 
                 home_weight = outcome_weights[outcome]["home"]
                 away_weight = outcome_weights[outcome]["away"]
@@ -199,12 +191,10 @@ class EloRatings:
                 # draw
                 self.correct_pred_draw += 1
                 self.wrong_pred += 1
-
             if home_s > away_s:
                 # home team won, expected based on win_probability
                 self.correct_pred += 1
                 self.correct_pred_draw += 1
-
             if home_s < away_s:
                 # home team lost, unexpected based on win_probability
                 self.wrong_pred += 1
@@ -214,12 +204,10 @@ class EloRatings:
                 # draw
                 self.correct_pred_draw += 1
                 self.wrong_pred += 1
-
             if home_s < away_s:
                 # home team lost, expected based on win_probability
                 self.correct_pred += 1
                 self.correct_pred_draw += 1
-
             if home_s > away_s:
                 # home team won, unexpected based on win_probability
                 self.wrong_pred += 1
