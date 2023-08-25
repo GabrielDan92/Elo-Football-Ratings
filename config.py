@@ -1,95 +1,128 @@
 MAP = {
-    "RO-Liga-1": {
+    "RO Liga 1": {
         "suffix": "Liga-I-Scores-and-Fixtures",
         "comp_id": 47,
     },
-    "UK-Premier-League": {
+    "UK Premier League": {
         "suffix": "Premier-League-Scores-and-Fixtures",
         "comp_id": 9,
     },
-    "SP-La-Liga": {
+    "SPAIN La Liga": {
         "suffix": "La-Liga-Scores-and-Fixtures",
         "comp_id": 12,
     },
-    "DE-Bundesliga": {
+    "DE Bundesliga": {
         "suffix": "Bundesliga-Scores-and-Fixtures",
         "comp_id": 20,
     },
-    "IT-Serie-A": {
+    "IT Serie A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 11,
     },
-    "FR-Ligue-1": {
+    "FRANCE Ligue 1": {
         "suffix": "Ligue-1-Scores-and-Fixtures",
         "comp_id": 13,
     },
-    "BLG-Pro-League": {
+    "BELGIA Pro League": {
         "suffix": "Belgian-Pro-League-Scores-and-Fixtures",
         "comp_id": 37,
     },
-    "BRZ-Serie-A": {
+    "BRAZIL Serie A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 24,
         "custom_link": True
     },
-    "CROAT-League": {
+    "CROATIA League": {
         "suffix": "Hrvatska-NL-Scores-and-Fixtures",
         "comp_id": 63,
     },
-    "CZECH-League": {
+    "CZECH League": {
         "suffix": "Czech-First-League-Scores-and-Fixtures",
         "comp_id": 66,
     },
-    "NETHRL-League": {
+    "NETHERL League": {
         "suffix": "Eredivisie-Scores-and-Fixtures",
         "comp_id": 23,
     },
-    "SCOT-League": {
+    "SCOTLAND League": {
         "suffix": "Scottish-Premiership-Scores-and-Fixtures",
         "comp_id": 40,
     },
-    "ARG-Primera-Division": {
+    "ARG Primera Division": {
         "suffix": "Primera-Division-Scores-and-Fixtures",
         "comp_id": 21,
         "custom_link": True
     },
-    "AUSTRL-League": {
+    "AUSTRALIA League": {
         "suffix": "A-League-Men-Scores-and-Fixtures",
         "comp_id": 65,
     },
-    "AUSTR-Bundesliga": {
+    "AUSTRIA Bundesliga": {
         "suffix": "Austrian-Bundesliga-Scores-and-Fixtures",
         "comp_id": 56,
     },
-    "DENMRK-Superliga": {
+    "DENMRK Superliga": {
         "suffix": "Superliga-Scores-and-Fixtures",
         "comp_id": 50,
     },
-    "FINL-Veikkausliiga": {
+    "FINLAND Veikkausliiga": {
         "suffix": "Veikkausliiga-Scores-and-Fixtures",
         "comp_id": 43,
         "custom_link": True
     },
-    "GREEK-Superliga": {
+    "GREEK Superliga": {
         "suffix": "Super-League-Greece-Scores-and-Fixtures",
         "comp_id": 27,
     },
-    "PORT-Superliga": {
+    "PORTUGAL Superliga": {
         "suffix": "Primeira-Liga-Scores-and-Fixtures",
         "comp_id": 32,
     },
-    "POLND-Ekstraklasa": {
+    "POLAND Ekstraklasa": {
         "suffix": "Ekstraklasa-Scores-and-Fixtures",
         "comp_id": 36,
     },
-    "NORW-Eliteserien": {
+    "NORWAY Eliteserien": {
         "suffix": "Eliteserien-Scores-and-Fixtures",
         "comp_id": 28,
         "custom_link": True
     },
-    "SWE-Allsvenskan": {
+    "SWEDEN Allsvenskan": {
         "suffix": "Allsvenskan-Scores-and-Fixtures",
         "comp_id": 29,
         "custom_link": True
     },
+    "Champions League": {
+        "suffix": "Champions-League-Scores-and-Fixtures",
+        "comp_id": 8,
+    },
+    "Europa League": {
+        "suffix": "Europa-League-Scores-and-Fixtures",
+        "comp_id": 19,
+    },
+    "Europa Conf League": {
+        "suffix": "Europa-Conference-League-Scores-and-Fixtures",
+        "comp_id": 882,
+    },
 }
+
+user_agents = [
+    'Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.43',
+    'Mozilla/5.0 (Windows NT 10.0; WOW64) SalamWeb/1.0.0.20 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.130 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_46_93) AppleWebKit/532.87.34 (KHTML, like Gecko) Chrome/56.3.7581.2219 Safari/533.27 Edge/36.11305',
+    'Mozilla/5.0 (X11; CrOS aarch64 15117.17.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.107.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 8_0) AppleWebKit/557.54 (KHTML, like Gecko) Chrome/99.0.716 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 9_0_2) AppleWebKit/566.38 (KHTML, like Gecko) Chrome/99.0.2519 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_18_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+]

@@ -1,50 +1,53 @@
 import requests
 from bs4 import BeautifulSoup
-from elo_ratings import EloRatings
-from config import MAP
+from config import MAP, user_agents
 import pandas as pd
 import datetime
 import time
+import random
 
 
 class ExtractMatches:
-    def __init__(
-        self,
-        comp,
-        start_year,
-        confidence=0.6,
-        future_predictions=True,
-        see_win_perc=True,
-        export_results=False,
-    ):
+    """
+    A class to extract and manage match data for domestic and international leagues.
+
+    This class provides methods to extract and store historic and future match data for a given competition.
+    It supports HTML parsing, exporting data to CSV, and loading data from previous extractions.
+
+    Attributes:
+        matches (dict): Played match data dictionary.
+        future_matches (dict): Future match data dictionary.
+        main_link (str): Base URL for fetching competition data.
+        confidence (float): Match prediction confidence level.
+        export_path (str): Path for exporting match data to CSV.
+
+    Methods:
+        extract_historic_data(start_year, comp): Extract historic match data.
+        extract_current_season_data(comp): Extract current season match data.
+        parse_html(url): Parse HTML content and extract match information.
+        export_historic_data(): Export played match data to CSV.
+        load_historic_data(start_year, comp): Load historic match data.
+        get_played_matches(): Get played match data dictionary.
+        get_future_matches(): Get future match data dictionary.
+
+    Parameters:
+        comp (str): Competition name.
+        start_year (int): Starting year for data extraction.
+        confidence (float): Match prediction confidence level.
+        export_results (bool): Export match results to CSV (default: False).
+        misc_league (bool): Miscellaneous league indicator (default: False).
+    """
+    def __init__(self, comp, start_year):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
-        self.export_path = (
-            f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
-        )
-        self.confidence = confidence
+        self.export_path = f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
 
-        # get played matches
+        # get played matches from start year until previous year
         self.load_historic_data(start_year, comp)
 
-        # extract current season played and scheduled matches
+        # extract current year's played and future matches
         self.extract_current_season_data(comp)
-
-        # instantiate the EloRatings class and get the scheduled matches winning probability
-        elo = EloRatings(matches=self.get_played_matches(), confidence=self.confidence)
-
-        if future_predictions:
-            scheduled_matches = self.get_scheduled_matches()
-            for k, v in scheduled_matches.items():
-                try:
-                    elo.query_interface(home_team_details=k, away_team=v)
-                except:
-                    continue
-        if see_win_perc:
-            elo.see_win_perc(competition_name=comp)
-        if export_results:
-            elo.export_results(competition_name=comp)
 
     def extract_historic_data(self, start_year, comp):
         curr_year = datetime.date.today().year
@@ -54,11 +57,12 @@ class ExtractMatches:
                 years = f"{start_year + 1}"
             else:
                 years = f"{start_year}-{start_year + 1}"
+
             url = f"{self.main_link}/{years}/schedule/{years}-{MAP[comp]['suffix']}"
             self.parse_html(url=url)
             start_year += 1
-            time.sleep(1)
 
+        # save the extracted matches locally to prevent extracting them in next runs
         self.export_historic_data()
 
     def extract_current_season_data(self, comp):
@@ -66,37 +70,33 @@ class ExtractMatches:
         self.parse_html(url=url)
 
     def parse_html(self, url):
-        print(f"\nAccess {url}")
-        html = requests.get(url=url)
+        print(f"Access {url}")
+        headers = {'User-Agent': random.choice(user_agents)}
+        html = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
 
+        def find_info(element, stat, sub_stat=None, sub_attr=None):
+            try:
+                info = element.find("td", {"data-stat": stat})
+                if sub_stat and sub_attr:
+                    sub_info = info.find(sub_stat)
+                    return sub_info[sub_attr] if sub_info and sub_attr in sub_info.attrs else None
+                else:
+                    return info.find("a").text
+            except:
+                return None
+
         for match in matches:
-            try:
-                date = match.find("td", {"data-stat": "date"}).find("a").text
-            except:
-                date = None
-            try:
-                hour = match.find("td", {"data-stat": "start_time"}).find(
-                    "span", {"class": "venuetime"}
-                )["data-venue-time"]
-            except:
-                hour = None
-            try:
-                score = match.find("td", {"data-stat": "score"}).find("a").text
-            except:
-                score = None
-            try:
-                home_team = match.find("td", {"data-stat": "home_team"}).find("a").text
-            except:
-                home_team = None
-            try:
-                away_team = match.find("td", {"data-stat": "away_team"}).find("a").text
-            except:
-                away_team = None
+            date = find_info(match, "date")
+            hour = find_info(match, "start_time", "span", "data-venue-time")
+            score = find_info(match, "score")
+            home_team = find_info(match, "home_team")
+            away_team = find_info(match, "away_team")
 
             if score:
-                key = f"{date} {hour}"
+                # we either have a score, so this is a played game
+                key = f"{date} {hour} {home_team}"
                 self.matches[key] = {
                     "home_team": home_team,
                     "away_team": away_team,
@@ -104,7 +104,12 @@ class ExtractMatches:
                     "away_score": score.replace("–", "-")[2],
                 }
             elif date and hour:
-                self.future_matches[date, hour, home_team] = away_team
+                if datetime.datetime.strptime(date, "%Y-%m-%d").date() >= datetime.date.today():
+                    # or we don't have a score, so this is a future game *if it has a scheduled date & hour
+                    self.future_matches[date, hour, home_team] = away_team
+
+        # prevent making more than 20 requests per minute
+        time.sleep(3.1)
 
     def export_historic_data(self):
         pd.DataFrame(
@@ -118,29 +123,30 @@ class ExtractMatches:
         ).to_csv(self.export_path, encoding="utf-8-sig")
 
     def load_historic_data(self, start_year, comp):
-        # extract or load played matches up until previous season
+        # extract or load played matches from start year until previous year
         try:
             data = pd.read_csv(self.export_path)
 
-            date = data["date"].tolist()
-            home_team = data["home_team"].tolist()
-            away_team = data["away_team"].tolist()
-            home_score = data["home_score"].tolist()
-            away_score = data["away_score"].tolist()
+            for i, row in data.iterrows():
+                date = row["date"]
+                home_team = row["home_team"]
+                away_team = row["away_team"]
+                home_score = row["home_score"]
+                away_score = row["away_score"]
 
-            for i in range(len(date)):
-                self.matches[f"{date[i]}_({i})"] = {
-                    "home_team": home_team[i],
-                    "away_team": away_team[i],
-                    "home_score": home_score[i],
-                    "away_score": away_score[i],
+                self.matches[f"{date}_({i})"] = {
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "home_score": home_score,
+                    "away_score": away_score,
                 }
 
         except OSError:
+            # extract the matches if they are not already saved locally
             self.extract_historic_data(start_year, comp)
 
     def get_played_matches(self):
         return self.matches
 
-    def get_scheduled_matches(self):
+    def get_future_matches(self):
         return self.future_matches
