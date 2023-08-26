@@ -25,9 +25,10 @@ class RichTable(metaclass=Singleton):
     """
 
     def __init__(self):
-        self.db = PostgreSQL()
         self.matches = {}
+        self.db = PostgreSQL()
         self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
+        
         self.table.add_column("Match time", no_wrap=True, style="cyan")
         self.table.add_column("Teams", no_wrap=True, style="cyan")
         self.table.add_column("Prediction", no_wrap=True, justify="center")
@@ -69,7 +70,6 @@ class RichTable(metaclass=Singleton):
         self.add_table_rows(matches=sorted_matches)
 
     def add_table_rows(self, matches):
-
         for match in matches.values():
             self.table.add_row(
                 match["time"],
@@ -88,6 +88,7 @@ class RichTable(metaclass=Singleton):
             match["corr_predictions"],
             match["corr_predictions_draw"]) for match in matches.values()]
 
+		# TODO: move the query in queries.py
         query = """
             INSERT INTO scheduled_games (
                 match_time, 
