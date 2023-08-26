@@ -134,6 +134,7 @@ class ExtractMatches:
         time.sleep(3.1)
                 
     def export_historic_data(self):
+        # TODO: move the queries in queries.py
         query = """
             INSERT INTO played_games (date_hour, home_team, away_team, home_score, away_score, competition)
             VALUES (%s, %s, %s, %s, %s, %s)
