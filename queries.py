@@ -11,6 +11,7 @@ CREATE_PLAYED_GAMES_TABLE = """
     )
 """
 
+# TODO: add added_at column
 CREATE_SCHEDULED_GAMES_TABLE = f"""
     CREATE TABLE IF NOT EXISTS scheduled_games (
         match_time                          varchar(200),
