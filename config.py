@@ -44,7 +44,7 @@ MAP = {
         "suffix": "Eredivisie-Scores-and-Fixtures",
         "comp_id": 23,
     },
-    "SCOTLAND League": {
+    "SCOTLAND Premiership": {
         "suffix": "Scottish-Premiership-Scores-and-Fixtures",
         "comp_id": 40,
     },

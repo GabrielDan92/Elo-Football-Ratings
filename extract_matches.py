@@ -53,6 +53,8 @@ class ExtractMatches:
         while start_year < curr_year:
             if "custom_link" in MAP[self.comp].keys():
                 years = f"{start_year + 1}"
+                if start_year == curr_year - 1:
+                    break
             else:
                 years = f"{start_year}-{start_year + 1}"
 
@@ -132,7 +134,7 @@ class ExtractMatches:
         values = (f"{start_year}%", self.comp)
         records_count = self.db.query(query_records_count, values)[0][0]
 
-        if records_count < 100:
+        if records_count < 50:
             # extract the matches if they are not already saved in the db
             self.extract_historic_data(start_year)
         else:

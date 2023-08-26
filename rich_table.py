@@ -98,7 +98,14 @@ class RichTable(metaclass=Singleton):
                 correct_predictions_with_draws
             )
             VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (match_time, teams) DO NOTHING
+            ON CONFLICT (match_time, teams) DO 
+                UPDATE SET
+                     match_time = EXCLUDED.match_time,
+                     teams = EXCLUDED.teams,
+                     prediction = EXCLUDED.prediction,
+                     competition = EXCLUDED.competition,
+                     correct_predictions = EXCLUDED.correct_predictions,
+                     correct_predictions_with_draws = EXCLUDED.correct_predictions_with_draws
         """
 
         self.db.batch_insert(query, values)

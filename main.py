@@ -19,7 +19,7 @@ leagues = [
     {"comp": "CROATIA League", "start_year": 2018, "confidence": 0.6},      # 70%
     {"comp": "CZECH League", "start_year": 2020, "confidence": 0.55},       # 69%
     {"comp": "NETHERL League", "start_year": 2020, "confidence": 0.57},     # 73%
-    {"comp": "SCOTLAND League", "start_year": 2019, "confidence": 0.55},    # 74%
+    {"comp": "SCOTLAND Premiership", "start_year": 2019, "confidence": 0.55},    # 74%
     {"comp": "AUSTRIA Bundesliga", "start_year": 2018, "confidence": 0.62}, # 70%
     {"comp": "DENMRK Superliga", "start_year": 2018, "confidence": 0.65},   # 67%
     {"comp": "FINLAND Veikkausliiga", "start_year": 2018, "confidence": 0.58}, # 64%
@@ -27,9 +27,9 @@ leagues = [
     {"comp": "POLAND Ekstraklasa", "start_year": 2019, "confidence": 0.6},  # 74%
     {"comp": "NORWAY Eliteserien", "start_year": 2018, "confidence": 0.6},  # 70%
     {"comp": "SWEDEN Allsvenskan", "start_year": 2019, "confidence": 0.6},  # 73%
-    {"comp": "Champions League", "start_year": 2017, "confidence": 0.58, "misc_league": True},    # 74%
-    {"comp": "Europa League", "start_year": 2017, "confidence": 0.58, "misc_league": True},       # 74%
-    {"comp": "Europa Conf League", "start_year": 2021, "confidence": 0.57, "misc_league": True}
+    # {"comp": "Champions League", "start_year": 2017, "confidence": 0.58, "misc_league": True},    # 74%
+    # {"comp": "Europa League", "start_year": 2017, "confidence": 0.58, "misc_league": True},       # 74%
+    # {"comp": "Europa Conf League", "start_year": 2021, "confidence": 0.57, "misc_league": True}
 ]
 
 if __name__ == "__main__":
