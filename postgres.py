@@ -10,21 +10,6 @@ class PostgreSQL(metaclass=Singleton):
         self.conn = self.open_conn()
         self.create_games_tables()
 
-    def open_conn(self):
-        conn = psycopg2.connect(
-            host=os.environ.get("DB_HOST"),
-            dbname=os.environ.get("DB_NAME"),
-            user=os.environ.get("DB_USERNAME"),
-            password=os.environ.get("DB_PASSWORD"),
-            port=os.environ.get("DB_PORT")
-        )
-
-        return conn
-
-    def close_conn(self):
-        self.conn.commit()
-        self.conn.close()
-
     def create_games_tables(self):
         with self.conn.cursor() as cur:
             cur.execute(CREATE_PLAYED_GAMES_TABLE)
@@ -40,6 +25,17 @@ class PostgreSQL(metaclass=Singleton):
 
             return cur.fetchall()
 
+    def open_conn(self):
+        conn = psycopg2.connect(
+            host=os.environ.get("DB_HOST"),
+            dbname=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USERNAME"),
+            password=os.environ.get("DB_PASSWORD"),
+            port=os.environ.get("DB_PORT")
+        )
 
-if __name__ == "__main__":
-    PostgreSQL()
+        return conn
+
+    def close_conn(self):
+        self.conn.commit()
+        self.conn.close()
