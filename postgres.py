@@ -6,7 +6,6 @@ from singleton import Singleton
 
 
 class PostgreSQL(metaclass=Singleton):
-
     def __init__(self):
         self.conn = self.open_conn()
         self.create_games_tables()
