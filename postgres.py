@@ -31,7 +31,7 @@ class PostgreSQL(metaclass=Singleton):
             dbname=os.environ.get("DB_NAME"),
             user=os.environ.get("DB_USERNAME"),
             password=os.environ.get("DB_PASSWORD"),
-            port=os.environ.get("DB_PORT")
+            port=os.environ.get("DB_PORT"),
         )
 
         return conn

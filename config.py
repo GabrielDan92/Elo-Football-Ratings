@@ -30,7 +30,7 @@ MAP = {
     "BRAZIL Serie A": {
         "suffix": "Serie-A-Scores-and-Fixtures",
         "comp_id": 24,
-        "custom_link": True
+        "custom_link": True,
     },
     "CROATIA League": {
         "suffix": "Hrvatska-NL-Scores-and-Fixtures",
@@ -51,7 +51,7 @@ MAP = {
     "ARG Primera Division": {
         "suffix": "Primera-Division-Scores-and-Fixtures",
         "comp_id": 21,
-        "custom_link": True
+        "custom_link": True,
     },
     "AUSTRALIA League": {
         "suffix": "A-League-Men-Scores-and-Fixtures",
@@ -68,7 +68,7 @@ MAP = {
     "FINLAND Veikkausliiga": {
         "suffix": "Veikkausliiga-Scores-and-Fixtures",
         "comp_id": 43,
-        "custom_link": True
+        "custom_link": True,
     },
     "GREEK Superliga": {
         "suffix": "Super-League-Greece-Scores-and-Fixtures",
@@ -85,12 +85,12 @@ MAP = {
     "NORWAY Eliteserien": {
         "suffix": "Eliteserien-Scores-and-Fixtures",
         "comp_id": 28,
-        "custom_link": True
+        "custom_link": True,
     },
     "SWEDEN Allsvenskan": {
         "suffix": "Allsvenskan-Scores-and-Fixtures",
         "comp_id": 29,
-        "custom_link": True
+        "custom_link": True,
     },
     "Champions League": {
         "suffix": "Champions-League-Scores-and-Fixtures",
@@ -107,22 +107,22 @@ MAP = {
 }
 
 user_agents = [
-    'Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.43',
-    'Mozilla/5.0 (Windows NT 10.0; WOW64) SalamWeb/1.0.0.20 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.130 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_46_93) AppleWebKit/532.87.34 (KHTML, like Gecko) Chrome/56.3.7581.2219 Safari/533.27 Edge/36.11305',
-    'Mozilla/5.0 (X11; CrOS aarch64 15117.17.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.107.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 8_0) AppleWebKit/557.54 (KHTML, like Gecko) Chrome/99.0.716 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 9_0_2) AppleWebKit/566.38 (KHTML, like Gecko) Chrome/99.0.2519 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_18_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+    "Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.43",
+    "Mozilla/5.0 (Windows NT 10.0; WOW64) SalamWeb/1.0.0.20 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.130 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_46_93) AppleWebKit/532.87.34 (KHTML, like Gecko) Chrome/56.3.7581.2219 Safari/533.27 Edge/36.11305",
+    "Mozilla/5.0 (X11; CrOS aarch64 15117.17.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.107.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 8_0) AppleWebKit/557.54 (KHTML, like Gecko) Chrome/99.0.716 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 9_0_2) AppleWebKit/566.38 (KHTML, like Gecko) Chrome/99.0.2519 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_18_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
 ]

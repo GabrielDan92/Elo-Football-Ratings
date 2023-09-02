@@ -2,6 +2,7 @@ from rich.table import Table
 from rich import print
 
 from postgres import PostgreSQL
+from queries import INSERT_SCHEDULED_GAMES
 from singleton import Singleton
 
 
@@ -54,7 +55,7 @@ class RichTable(metaclass=Singleton):
             "prediction_raw": prediction_percent_raw,
             "competition": competition,
             "corr_predictions": corr_predictions,
-            "corr_predictions_draw": corr_predictions_draw
+            "corr_predictions_draw": corr_predictions_draw,
         }
 
     def calculate_correct_predictions(self, kwargs, correct_key, wrong_key):
@@ -77,39 +78,22 @@ class RichTable(metaclass=Singleton):
                 match["prediction"],
                 match["competition"],
                 match["corr_predictions"],
-                match["corr_predictions_draw"]
+                match["corr_predictions_draw"],
             )
 
-        values = [(
-            match["time"],
-            match["teams"],
-            match["prediction_raw"],
-            match["competition"],
-            match["corr_predictions"],
-            match["corr_predictions_draw"]) for match in matches.values()]
-
-		# TODO: move the query in queries.py
-        query = """
-            INSERT INTO scheduled_games (
-                match_time, 
-                teams, 
-                prediction, 
-                competition, 
-                correct_predictions, 
-                correct_predictions_with_draws
+        values = [
+            (
+                match["time"],
+                match["teams"],
+                match["prediction_raw"],
+                match["competition"],
+                match["corr_predictions"],
+                match["corr_predictions_draw"],
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (match_time, teams) DO 
-                UPDATE SET
-                     match_time = EXCLUDED.match_time,
-                     teams = EXCLUDED.teams,
-                     prediction = EXCLUDED.prediction,
-                     competition = EXCLUDED.competition,
-                     correct_predictions = EXCLUDED.correct_predictions,
-                     correct_predictions_with_draws = EXCLUDED.correct_predictions_with_draws
-        """
+            for match in matches.values()
+        ]
 
-        self.db.batch_insert(query, values)
+        self.db.batch_insert(INSERT_SCHEDULED_GAMES, values)
 
     def see_predictions(self):
         self.order_matches()

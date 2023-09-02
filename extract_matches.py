@@ -6,6 +6,8 @@ import datetime
 import time
 import random
 
+from queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
+
 
 class ExtractMatches:
     """
@@ -33,6 +35,7 @@ class ExtractMatches:
         comp (str): Competition name.
         start_year (int): Starting year for data extraction.
     """
+
     def __init__(self, comp, start_year):
         self.matches = {}
         self.future_matches = {}
@@ -46,18 +49,17 @@ class ExtractMatches:
 
         # extract current year's played and future matches
         self.extract_current_season_data()
-        
+
     def load_historic_data(self, start_year):
-        query_records_count = "SELECT count(*) from played_games WHERE date_hour LIKE %s AND competition = %s"
         values = (f"{start_year}%", self.comp)
-        records_count = self.db.query(query_records_count, values)[0][0]
+        records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
         if records_count == 0:
             # extract the matches if they are not already saved in the db
             self.extract_historic_data(start_year)
         else:
             # load the matches from the db
-            query = f"""SELECT * from played_games WHERE competition = '{self.comp}'"""
+            query = GET_MATCHES(competition=self.comp)
 
             records = self.db.query(query)
 
@@ -93,7 +95,7 @@ class ExtractMatches:
 
     def parse_html(self, url):
         print(f"Access {url}")
-        headers = {'User-Agent': random.choice(user_agents)}
+        headers = {"User-Agent": random.choice(user_agents)}
         html = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
@@ -132,25 +134,21 @@ class ExtractMatches:
 
         # prevent making more than 20 requests per minute
         time.sleep(3.1)
-                
+
     def export_historic_data(self):
-        # TODO: move the queries in queries.py
-        query = """
-            INSERT INTO played_games (date_hour, home_team, away_team, home_score, away_score, competition)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (date_hour, home_team) DO NOTHING
-        """
+        values = [
+            (
+                f"{date.split(' ')[0]}, {date.split(' ')[1]}",
+                v["home_team"],
+                v["away_team"],
+                v["home_score"],
+                v["away_score"],
+                self.comp,
+            )
+            for date, v in self.matches.items()
+        ]
 
-        values = [(
-            f"{date.split(' ')[0]}, {date.split(' ')[1]}",
-            v["home_team"],
-            v["away_team"],
-            v["home_score"],
-            v["away_score"],
-            self.comp)
-            for date, v in self.matches.items()]
-
-        self.db.batch_insert(query, values)
+        self.db.batch_insert(INSERT_PLAYED_GAMES, values)
 
     def get_played_matches(self):
         return self.matches
