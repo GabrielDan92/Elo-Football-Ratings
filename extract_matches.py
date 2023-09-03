@@ -5,6 +5,7 @@ from postgres import PostgreSQL
 import datetime
 import time
 import random
+import pandas as pd
 
 from queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
 
@@ -36,12 +37,15 @@ class ExtractMatches:
         start_year (int): Starting year for data extraction.
     """
 
-    def __init__(self, comp, start_year):
+    def __init__(self, comp, start_year, use_db):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
-        self.export_path = f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
+        self.export_path = (
+            f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
+        )
         self.comp = comp
+        self.use_db = use_db
         self.db = PostgreSQL()
 
         # get played matches from start year until previous year
@@ -51,25 +55,49 @@ class ExtractMatches:
         self.extract_current_season_data()
 
     def load_historic_data(self, start_year):
-        values = (f"{start_year}%", self.comp)
-        records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
+        print(self.use_db)
+        if self.use_db:
+            values = (f"{start_year}%", self.comp)
+            records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
-        if records_count == 0:
-            # extract the matches if they are not already saved in the db
-            self.extract_historic_data(start_year)
+            if records_count == 0:
+                # extract the matches if they are not already saved in the db
+                self.extract_historic_data(start_year)
+            else:
+                # load the matches from the db
+                query = GET_MATCHES(competition=self.comp)
+
+                records = self.db.query(query)
+
+                for i, record in enumerate(records):
+                    self.matches[f"{record[0]}_({i})"] = {
+                        "home_team": record[1],
+                        "away_team": record[2],
+                        "home_score": record[3],
+                        "away_score": record[4],
+                    }
         else:
-            # load the matches from the db
-            query = GET_MATCHES(competition=self.comp)
+            # extract or load played matches from start year until previous year
+            try:
+                data = pd.read_csv(self.export_path)
 
-            records = self.db.query(query)
+                for i, row in data.iterrows():
+                    date = row["date"]
+                    home_team = row["home_team"]
+                    away_team = row["away_team"]
+                    home_score = row["home_score"]
+                    away_score = row["away_score"]
 
-            for i, record in enumerate(records):
-                self.matches[f"{record[0]}_({i})"] = {
-                    "home_team": record[1],
-                    "away_team": record[2],
-                    "home_score": record[3],
-                    "away_score": record[4],
-                }
+                    self.matches[f"{date}_({i})"] = {
+                        "home_team": home_team,
+                        "away_team": away_team,
+                        "home_score": home_score,
+                        "away_score": away_score,
+                    }
+
+            except OSError:
+                # extract the matches if they are not already saved locally
+                self.extract_historic_data(start_year)
 
     def extract_historic_data(self, start_year):
         curr_year = datetime.date.today().year
@@ -82,7 +110,9 @@ class ExtractMatches:
             else:
                 years = f"{start_year}-{start_year + 1}"
 
-            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
+            url = (
+                f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
+            )
             self.parse_html(url=url)
             start_year += 1
 
@@ -105,7 +135,11 @@ class ExtractMatches:
                 info = element.find("td", {"data-stat": stat})
                 if sub_stat and sub_attr:
                     sub_info = info.find(sub_stat)
-                    return sub_info[sub_attr] if sub_info and sub_attr in sub_info.attrs else None
+                    return (
+                        sub_info[sub_attr]
+                        if sub_info and sub_attr in sub_info.attrs
+                        else None
+                    )
                 else:
                     return info.find("a").text
             except:
@@ -128,7 +162,10 @@ class ExtractMatches:
                     "away_score": score.replace("–", "-")[2],
                 }
             elif date and hour:
-                if datetime.datetime.strptime(date, "%Y-%m-%d").date() >= datetime.date.today():
+                if (
+                    datetime.datetime.strptime(date, "%Y-%m-%d").date()
+                    >= datetime.date.today()
+                ):
                     # or we don't have a score, so this is a future game *if it has a scheduled date & hour
                     self.future_matches[date, hour, home_team] = away_team
 
@@ -136,19 +173,30 @@ class ExtractMatches:
         time.sleep(3.1)
 
     def export_historic_data(self):
-        values = [
-            (
-                f"{date.split(' ')[0]}, {date.split(' ')[1]}",
-                v["home_team"],
-                v["away_team"],
-                v["home_score"],
-                v["away_score"],
-                self.comp,
-            )
-            for date, v in self.matches.items()
-        ]
+        if self.use_db:
+            values = [
+                (
+                    f"{date.split(' ')[0]}, {date.split(' ')[1]}",
+                    v["home_team"],
+                    v["away_team"],
+                    v["home_score"],
+                    v["away_score"],
+                    self.comp,
+                )
+                for date, v in self.matches.items()
+            ]
 
-        self.db.batch_insert(INSERT_PLAYED_GAMES, values)
+            self.db.batch_insert(INSERT_PLAYED_GAMES, values)
+        else:
+            pd.DataFrame(
+                {
+                    "date": self.matches.keys(),
+                    "home_team": [v["home_team"] for v in self.matches.values()],
+                    "away_team": [v["away_team"] for v in self.matches.values()],
+                    "home_score": [v["home_score"] for v in self.matches.values()],
+                    "away_score": [v["away_score"] for v in self.matches.values()],
+                }
+            ).to_csv(self.export_path, encoding="utf-8-sig")
 
     def get_played_matches(self):
         return self.matches
