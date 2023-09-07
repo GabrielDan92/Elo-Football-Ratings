@@ -1,6 +1,5 @@
 import datetime
 import random
-import time
 
 import pandas as pd
 import requests
@@ -151,7 +150,7 @@ class ExtractMatches:
                     self.future_matches[date, hour, home_team] = away_team
 
         # prevent making more than 20 requests per minute
-        time.sleep(3.1)
+        # time.sleep(3.1)
 
     def export_historic_data(self):
         if self.use_db:

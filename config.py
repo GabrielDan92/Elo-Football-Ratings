@@ -104,6 +104,24 @@ MAP = {
         "suffix": "Europa-Conference-League-Scores-and-Fixtures",
         "comp_id": 882,
     },
+    "Korea League 1": {
+        "suffix": "K-League-1-Scores-and-Fixtures",
+        "comp_id": 55,
+        "custom_link": True,
+    },
+    "Japan J1 League": {
+        "suffix": "J1-League-Scores-and-Fixtures",
+        "comp_id": 25,
+        "custom_link": True,
+    },
+    "Saudi Prof League": {
+        "suffix": "Saudi-Professional-League-Scores-and-Fixtures",
+        "comp_id": 70,
+    },
+    "Mexic Liga MX": {
+        "suffix": "Liga-MX-Scores-and-Fixtures",
+        "comp_id": 31,
+    },
 }
 
 INITIAL_ELO_RATING = 1500
