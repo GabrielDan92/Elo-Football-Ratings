@@ -69,4 +69,12 @@ INSERT_SCHEDULED_GAMES = """
 select * from scheduled_games 
 where date(match_time) >= CURRENT_DATE
 order by match_time asc, correct_predictions desc;
+
+with cte as (select *,
+                    dense_rank() over (order by date(match_time)) as day
+             from scheduled_games
+             where date(match_time) >= CURRENT_DATE
+             order by day, competition)
+select * from cte where day < 5
+order by day, competition desc;
 """

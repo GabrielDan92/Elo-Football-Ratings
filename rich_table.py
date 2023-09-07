@@ -1,5 +1,5 @@
-from rich.table import Table
 from rich import print
+from rich.table import Table
 
 from postgres import PostgreSQL
 from queries import INSERT_SCHEDULED_GAMES
@@ -12,30 +12,23 @@ class RichTable(metaclass=Singleton):
 
     Provides functionality to save match info, calculate correct prediction percentages,
     order matches, and display predictions using `rich` library.
-
-    Attributes:
-        matches (dict): Store match predictions.
-        table (Table): Rich Table object for display.
-
-    Methods:
-        save_matches(**kwargs): Save match info in matches dict.
-        calculate_correct_predictions(kwargs, correct_key, wrong_key): Calculate and format correct prediction %.
-        order_matches(): Order matches based on time.
-        add_table_rows(matches): Add rows to rich Table.
-        see_predictions(): Display predictions in formatted table.
     """
 
     def __init__(self):
         self.matches = {}
         self.db = PostgreSQL()
-        self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
-        
+        self.table = Table(
+            show_header=True, header_style="bold magenta", show_lines=True
+        )
+
         self.table.add_column("Match time", no_wrap=True, style="cyan")
         self.table.add_column("Teams", no_wrap=True, style="cyan")
         self.table.add_column("Prediction", no_wrap=True, justify="center")
         self.table.add_column("Competition", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions", no_wrap=True, style="cyan")
-        self.table.add_column("% of correct predictions w/ draws", no_wrap=True, style="cyan")
+        self.table.add_column(
+            "% of correct predictions w/ draws", no_wrap=True, style="cyan"
+        )
 
     def save_matches(self, **kwargs):
         time = f"{kwargs['date']}, {kwargs['hour']}"

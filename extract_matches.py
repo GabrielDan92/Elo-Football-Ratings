@@ -1,12 +1,13 @@
+import datetime
+import random
+import time
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
 from config import MAP, user_agents
 from postgres import PostgreSQL
-import datetime
-import time
-import random
-import pandas as pd
-
 from queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
 
 
@@ -16,25 +17,6 @@ class ExtractMatches:
 
     This class provides methods to extract and store historic and future match data for a given competition.
     It supports HTML parsing, exporting data to CSV, and loading data from previous extractions.
-
-    Attributes:
-        matches (dict): Played match data dictionary.
-        future_matches (dict): Future match data dictionary.
-        main_link (str): Base URL for fetching competition data.
-        export_path (str): Path for exporting match data to CSV.
-
-    Methods:
-        extract_historic_data(start_year, comp): Extract historic match data.
-        extract_current_season_data(comp): Extract current season match data.
-        parse_html(url): Parse HTML content and extract match information.
-        export_historic_data(): Export played match data to CSV.
-        load_historic_data(start_year, comp): Load historic match data.
-        get_played_matches(): Get played match data dictionary.
-        get_future_matches(): Get future match data dictionary.
-
-    Parameters:
-        comp (str): Competition name.
-        start_year (int): Starting year for data extraction.
     """
 
     def __init__(self, comp, start_year, use_db):
@@ -55,7 +37,6 @@ class ExtractMatches:
         self.extract_current_season_data()
 
     def load_historic_data(self, start_year):
-        print(self.use_db)
         if self.use_db:
             values = (f"{start_year}%", self.comp)
             records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]

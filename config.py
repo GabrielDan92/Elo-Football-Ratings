@@ -106,6 +106,13 @@ MAP = {
     },
 }
 
+INITIAL_ELO_RATING = 1500
+ELO_LOWER_BRACKET = 1300
+ELO_UPPER_BRACKET = 1550
+WIN_PROB_DIVISOR_DOMESTIC = 600
+WIN_PROB_DIVISOR_INT = 400
+FIRST_MATCH = 30
+
 user_agents = [
     "Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.43",
