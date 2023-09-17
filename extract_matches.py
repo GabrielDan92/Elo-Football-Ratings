@@ -38,7 +38,7 @@ class ExtractMatches:
 
     def load_historic_data(self, start_year):
         if self.use_db:
-            if MAP[self.comp]['custom_link']:
+            if "custom_link" in MAP[self.comp].keys():
                 start_year += 1
 
             values = (f"{start_year}%", self.comp)
