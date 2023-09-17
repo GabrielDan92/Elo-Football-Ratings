@@ -1,5 +1,6 @@
 import datetime
 import random
+import time
 
 import pandas as pd
 import requests
@@ -37,6 +38,9 @@ class ExtractMatches:
 
     def load_historic_data(self, start_year):
         if self.use_db:
+            if MAP[self.comp]['custom_link']:
+                start_year += 1
+
             values = (f"{start_year}%", self.comp)
             records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
@@ -150,7 +154,7 @@ class ExtractMatches:
                     self.future_matches[date, hour, home_team] = away_team
 
         # prevent making more than 20 requests per minute
-        # time.sleep(3.1)
+        time.sleep(3.1)
 
     def export_historic_data(self):
         if self.use_db:

@@ -10,7 +10,7 @@ from rich_table import RichTable
 leagues = [
     {"comp": "Korea League 1", "start_year": 2018, "confidence": 0.62},    # 68%
     {"comp": "Japan J1 League", "start_year": 2020, "confidence": 0.6},    # 65%
-    {"comp": "Saudi Prof League", "start_year": 2021, "confidence": 0.6},  # 88%
+    # {"comp": "Saudi Prof League", "start_year": 2021, "confidence": 0.6},  # 88%
     {"comp": "Mexic Liga MX", "start_year": 2020, "confidence": 0.65},     # 67%
     {"comp": "AUSTRALIA League", "start_year": 2017, "confidence": 0.6},
     {"comp": "GREEK Superliga", "start_year": 2018, "confidence": 0.6},  # 74%

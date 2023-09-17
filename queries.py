@@ -23,6 +23,10 @@ CREATE_SCHEDULED_GAMES_TABLE = f"""
     )
 """
 
+DROP_SCHEDULED_GAMES_TABLE = """
+    DROP TABLE IF EXISTS scheduled_games CASCADE
+"""
+
 CREATE_STAGING_TABLE = """
 """
 

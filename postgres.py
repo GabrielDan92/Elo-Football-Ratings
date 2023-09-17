@@ -2,7 +2,11 @@ import os
 
 import psycopg2
 
-from queries import CREATE_PLAYED_GAMES_TABLE, CREATE_SCHEDULED_GAMES_TABLE
+from queries import (
+    CREATE_PLAYED_GAMES_TABLE,
+    CREATE_SCHEDULED_GAMES_TABLE,
+    DROP_SCHEDULED_GAMES_TABLE,
+)
 from singleton import Singleton
 
 
@@ -21,6 +25,7 @@ class PostgreSQL(metaclass=Singleton):
     def create_games_tables(self):
         # create the required 'played_games' and 'scheduled_games' tables in the database
         with self.conn.cursor() as cur:
+            cur.execute(DROP_SCHEDULED_GAMES_TABLE)
             cur.execute(CREATE_PLAYED_GAMES_TABLE)
             cur.execute(CREATE_SCHEDULED_GAMES_TABLE)
 
