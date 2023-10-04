@@ -49,7 +49,7 @@ class ExtractMatches:
                 self.extract_historic_data(start_year)
             else:
                 # load the matches from the db
-                query = GET_MATCHES(competition=self.comp)
+                query = GET_MATCHES(competition=self.comp, year=start_year)
 
                 records = self.db.query(query)
 
@@ -131,7 +131,7 @@ class ExtractMatches:
 
         for match in matches:
             date = find_info(match, "date")
-            hour = find_info(match, "start_time", "span", "data-venue-time")
+            hour = find_info(match, "start_time", "span", "data-venue-time") or '00:00'
             score = find_info(match, "score")
             home_team = find_info(match, "home_team")
             away_team = find_info(match, "away_team")

@@ -158,7 +158,7 @@ class EloRatings:
             "correct_pred_draw": self.correct_pred_draw,
             "wrong_pred_draw": self.wrong_pred_draw,
         }
-
+        # table.save_matches(**kwargs_dict)
         if self.misc_league or (win_prob <= 0.3 or win_prob >= self.confidence):
             # save all Champions League, Europa League etc. matches in the table
             # save only domestic leagues matches with a specific win_prob

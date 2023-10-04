@@ -122,7 +122,24 @@ MAP = {
         "suffix": "Liga-MX-Scores-and-Fixtures",
         "comp_id": 31,
     },
+    "Bulgaria First League": {
+        "suffix": "Bulgarian-First-League-Scores-and-Fixtures",
+        "comp_id": 67,
+    },
+    "Turkey SuperLiga": {
+        "suffix": "Super-Lig-Scores-and-Fixtures",
+        "comp_id": 26,
+    },
+    "Serbia SuperLiga": {
+        "suffix": "Serbian-SuperLiga-Scores-and-Fixtures",
+        "comp_id": 54,
+    },
+    "Hungary NB1": {
+        "suffix": "NB-I-Scores-and-Fixtures",
+        "comp_id": 46,
+    },
 }
+
 
 INITIAL_ELO_RATING = 1500
 ELO_LOWER_BRACKET = 1300
@@ -130,6 +147,7 @@ ELO_UPPER_BRACKET = 1550
 WIN_PROB_DIVISOR_DOMESTIC = 600
 WIN_PROB_DIVISOR_INT = 400
 FIRST_MATCH = 30
+
 
 user_agents = [
     "Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36",

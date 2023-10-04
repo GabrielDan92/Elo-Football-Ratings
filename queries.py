@@ -33,8 +33,8 @@ CREATE_STAGING_TABLE = """
 # TODO: add staging/future matches table
 
 GET_MATCHES = (
-    lambda competition: f"""
-    SELECT * from played_games WHERE competition = '{competition}'
+    lambda competition, year: f"""
+    SELECT * from played_games WHERE competition = '{competition}' AND DATE_PART('year', CAST(date_hour AS DATE)) >= {year}
 """
 )
 
@@ -45,7 +45,9 @@ GET_MATCHES_IN_TARGET_YEAR = """
 INSERT_PLAYED_GAMES = """
     INSERT INTO played_games (date_hour, home_team, away_team, home_score, away_score, competition)
     VALUES (%s, %s, %s, %s, %s, %s)
-    ON CONFLICT (date_hour, home_team) DO NOTHING
+    ON CONFLICT (date_hour, home_team) DO
+        UPDATE SET
+            competition = EXCLUDED.competition
 """
 
 INSERT_SCHEDULED_GAMES = """

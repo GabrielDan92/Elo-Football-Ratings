@@ -33,10 +33,15 @@ leagues = [
     {"comp": "POLAND Ekstraklasa", "start_year": 2019, "confidence": 0.6},  # 74%
     {"comp": "NORWAY Eliteserien", "start_year": 2018, "confidence": 0.6},  # 70%
     {"comp": "SWEDEN Allsvenskan", "start_year": 2019, "confidence": 0.6},  # 73%
-    {"comp": "Champions League", "start_year": 2017, "confidence": 0.58, "misc_league": True},  # 74%
-    {"comp": "Europa League", "start_year": 2017, "confidence": 0.58, "misc_league": True,},  # 74%
-    {"comp": "Europa Conf League", "start_year": 2021, "confidence": 0.57, "misc_league": True,},
+    {"comp": "Bulgaria First League", "start_year": 2020, "confidence": 0.57},  # 71%
+    {"comp": "Turkey SuperLiga", "start_year": 2020, "confidence": 0.6},  # 79%
+    {"comp": "Serbia SuperLiga", "start_year": 2021, "confidence": 0.6},  # 79%
+    {"comp": "Hungary NB1", "start_year": 2019, "confidence": 0.6},  # 71%
+    # {"comp": "Champions League", "start_year": 2017, "confidence": 0.58, "misc_league": True},  # 74%
+    # {"comp": "Europa League", "start_year": 2017, "confidence": 0.58, "misc_league": True,},  # 74%
+    # {"comp": "Europa Conf League", "start_year": 2021, "confidence": 0.57, "misc_league": True,},
 ]
+
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
