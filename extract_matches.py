@@ -37,6 +37,7 @@ class ExtractMatches:
         self.extract_current_season_data()
 
     def load_historic_data(self, start_year):
+        # TODO: historical not historic
         if self.use_db:
             if "custom_link" in MAP[self.comp].keys():
                 start_year += 1
@@ -146,11 +147,11 @@ class ExtractMatches:
                     "away_score": score.replace("–", "-")[2],
                 }
             elif date and hour:
+                # or we don't have a score, so this is a future game *if it has a scheduled date & hour
                 if (
                     datetime.datetime.strptime(date, "%Y-%m-%d").date()
                     >= datetime.date.today()
                 ):
-                    # or we don't have a score, so this is a future game *if it has a scheduled date & hour
                     self.future_matches[date, hour, home_team] = away_team
 
         # prevent making more than 20 requests per minute
