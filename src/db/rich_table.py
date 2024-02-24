@@ -1,30 +1,9 @@
-from rich.table import Table
 from rich import print
+from rich.table import Table
 
-
-class Singleton(type):
-    """
-    Implements the Singleton design pattern for the ExtractMatches class.
-
-    This metaclass ensures that each competition has its own instance of the ExtractMatches class, and it manages
-    sending scheduled matches to a shared rich table. By using the Singleton approach, all matches are consolidated
-    into a single table, which is only printed at the end. This approach eliminates the need for multiple tables for
-    each competition.
-
-    Attributes:
-        _instances (dict): A dictionary to store instances of classes using this metaclass.
-
-    Methods:
-        __call__(*args, **kwargs): Creates and returns a new instance if it doesn't exist, otherwise returns the
-        existing instance.
-
-    """
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+from src.db.postgres import PostgreSQL
+from src.db.queries import INSERT_SCHEDULED_GAMES
+from src.db.singleton import Singleton
 
 
 class RichTable(metaclass=Singleton):
@@ -33,34 +12,30 @@ class RichTable(metaclass=Singleton):
 
     Provides functionality to save match info, calculate correct prediction percentages,
     order matches, and display predictions using `rich` library.
-
-    Attributes:
-        matches (dict): Store match predictions.
-        table (Table): Rich Table object for display.
-
-    Methods:
-        save_matches(**kwargs): Save match info in matches dict.
-        calculate_correct_predictions(kwargs, correct_key, wrong_key): Calculate and format correct prediction %.
-        order_matches(): Order matches based on time.
-        add_table_rows(matches): Add rows to rich Table.
-        see_predictions(): Display predictions in formatted table.
     """
 
     def __init__(self):
         self.matches = {}
-        self.table = Table(show_header=True, header_style="bold magenta", show_lines=True)
+        self.db = PostgreSQL()
+        self.table = Table(
+            show_header=True, header_style="bold magenta", show_lines=True
+        )
+
         self.table.add_column("Match time", no_wrap=True, style="cyan")
         self.table.add_column("Teams", no_wrap=True, style="cyan")
         self.table.add_column("Prediction", no_wrap=True, justify="center")
         self.table.add_column("Competition", no_wrap=True, style="cyan")
         self.table.add_column("% of correct predictions", no_wrap=True, style="cyan")
-        self.table.add_column("% of correct predictions w/ draws", no_wrap=True, style="cyan")
+        self.table.add_column(
+            "% of correct predictions w/ draws", no_wrap=True, style="cyan"
+        )
 
     def save_matches(self, **kwargs):
         time = f"{kwargs['date']}, {kwargs['hour']}"
         teams = f"{kwargs['home_team']} - {kwargs['away_team']}"
         competition = f"{kwargs['comp']} ({round(kwargs['confidence']*100)}% confidence)"
         prediction_percent = f"[bold][green]{str(round(kwargs['win_prob']*100))}%[/green][/bold]"
+        prediction_percent_raw = f"{str(round(kwargs['win_prob']*100))}%"
         corr_predictions = self.calculate_correct_predictions(kwargs, 'correct_pred', 'wrong_pred')
         corr_predictions_draw = self.calculate_correct_predictions(kwargs, 'correct_pred_draw', 'wrong_pred_draw')
 
@@ -70,9 +45,10 @@ class RichTable(metaclass=Singleton):
             "time": time,
             "teams": teams,
             "prediction": prediction_percent,
+            "prediction_raw": prediction_percent_raw,
             "competition": competition,
             "corr_predictions": corr_predictions,
-            "corr_predictions_draw": corr_predictions_draw
+            "corr_predictions_draw": corr_predictions_draw,
         }
 
     def calculate_correct_predictions(self, kwargs, correct_key, wrong_key):
@@ -95,8 +71,22 @@ class RichTable(metaclass=Singleton):
                 match["prediction"],
                 match["competition"],
                 match["corr_predictions"],
-                match["corr_predictions_draw"]
+                match["corr_predictions_draw"],
             )
+
+        values = [
+            (
+                match["time"],
+                match["teams"],
+                match["prediction_raw"],
+                match["competition"],
+                match["corr_predictions"],
+                match["corr_predictions_draw"],
+            )
+            for match in matches.values()
+        ]
+
+        self.db.batch_insert(INSERT_SCHEDULED_GAMES, values)
 
     def see_predictions(self):
         self.order_matches()
