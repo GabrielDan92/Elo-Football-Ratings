@@ -2,12 +2,12 @@ import os
 
 import psycopg2
 
-from queries import (
+from src.db.queries import (
     CREATE_PLAYED_GAMES_TABLE,
     CREATE_SCHEDULED_GAMES_TABLE,
     DROP_SCHEDULED_GAMES_TABLE,
 )
-from singleton import Singleton
+from src.db.singleton import Singleton
 
 
 class PostgreSQL(metaclass=Singleton):

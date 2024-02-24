@@ -7,8 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from config import MAP, user_agents
-from postgres import PostgreSQL
-from queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
+from src.db.postgres import PostgreSQL
+from src.db.queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
 
 
 class ExtractMatches:
@@ -31,13 +31,12 @@ class ExtractMatches:
         self.db = PostgreSQL()
 
         # get played matches from start year until previous year
-        self.load_historic_data(start_year)
+        self.load_historical_data(start_year)
 
         # extract current year's played and future matches
         self.extract_current_season_data()
 
-    def load_historic_data(self, start_year):
-        # TODO: historical not historic
+    def load_historical_data(self, start_year):
         if self.use_db:
             if "custom_link" in MAP[self.comp].keys():
                 start_year += 1

@@ -10,6 +10,7 @@ CREATE_PLAYED_GAMES_TABLE = """
         PRIMARY KEY (date_hour, home_team)
     )
 """
+
 CREATE_SCHEDULED_GAMES_TABLE = f"""
     CREATE TABLE IF NOT EXISTS scheduled_games (
         match_time                          varchar(200),
@@ -26,11 +27,6 @@ CREATE_SCHEDULED_GAMES_TABLE = f"""
 DROP_SCHEDULED_GAMES_TABLE = """
     DROP TABLE IF EXISTS scheduled_games CASCADE
 """
-
-CREATE_STAGING_TABLE = """
-"""
-
-# TODO: add staging/future matches table
 
 GET_MATCHES = (
     lambda competition, year: f"""

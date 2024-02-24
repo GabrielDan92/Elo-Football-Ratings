@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 from config import (
@@ -158,7 +160,7 @@ class EloRatings:
             "correct_pred_draw": self.correct_pred_draw,
             "wrong_pred_draw": self.wrong_pred_draw,
         }
-        # table.save_matches(**kwargs_dict)
+
         if self.misc_league or (win_prob <= 0.3 or win_prob >= self.confidence):
             # save all Champions League, Europa League etc. matches in the table
             # save only domestic leagues matches with a specific win_prob
@@ -199,6 +201,10 @@ class EloRatings:
         """
         Export played matches results, including date, teams, scores, predictions, and Elo ratings to a CSV.
         """
+
+        if not os.path.exists("./archive"):
+            os.mkdir("./archive")
+
         df = pd.DataFrame(self.matches.values())
         df["date"] = self.matches.keys()
         df = df.reindex(columns=["date"] + list(df.columns[:-1]))

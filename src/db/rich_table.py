@@ -1,9 +1,9 @@
 from rich import print
 from rich.table import Table
 
-from postgres import PostgreSQL
-from queries import INSERT_SCHEDULED_GAMES
-from singleton import Singleton
+from src.db.postgres import PostgreSQL
+from src.db.queries import INSERT_SCHEDULED_GAMES
+from src.db.singleton import Singleton
 
 
 class RichTable(metaclass=Singleton):
