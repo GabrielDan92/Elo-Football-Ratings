@@ -33,8 +33,9 @@ class ExtractMatches:
         # get played matches from start year until previous year
         self.load_historical_data(start_year)
 
-        # extract current year's played and future matches
-        self.extract_current_season_data()
+        # # extract current year's played and future matches
+        # self.extract_current_season_data()
+        # self.export_historic_data()
 
     def load_historical_data(self, start_year):
         if self.use_db:
@@ -50,7 +51,6 @@ class ExtractMatches:
             else:
                 # load the matches from the db
                 query = GET_MATCHES(competition=self.comp, year=start_year)
-
                 records = self.db.query(query)
 
                 for i, record in enumerate(records):
@@ -88,16 +88,23 @@ class ExtractMatches:
 
         while start_year < curr_year:
             if "custom_link" in MAP[self.comp].keys():
-                years = f"{start_year + 1}"
                 if start_year == curr_year - 1:
                     break
+                years = f"{start_year + 1}"
             else:
                 years = f"{start_year}-{start_year + 1}"
 
-            url = (
-                f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
-            )
-            self.parse_html(url=url)
+            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
+
+            # check if the current iterator year doesn't exist in the db
+            values = (f"{start_year}%", self.comp)
+            records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
+
+            if records_count == 0:
+                self.parse_html(url=url)
+            else:
+                print(f"Season {years} already exists in the db.")
+
             start_year += 1
 
         # save the extracted matches locally to prevent extracting them in next runs
@@ -171,6 +178,8 @@ class ExtractMatches:
             ]
 
             self.db.batch_insert(INSERT_PLAYED_GAMES, values)
+            self.db.conn.commit()
+            # self.db.close_conn()
         else:
             pd.DataFrame(
                 {

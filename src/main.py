@@ -39,40 +39,77 @@ leagues = [
 ]
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+#
+#     for league in leagues:
+#         # get the played and scheduled games
+#         cls = ExtractMatches(
+#             comp=league["comp"],
+#             start_year=league["start_year"],
+#             use_db=league.get("use_db", True),
+#         )
+#
+#         # calculate winning prob for played games
+#         elo = EloRatings(
+#             matches=cls.get_played_matches(),
+#             confidence=league["confidence"],
+#             misc_league=league.get("misc_league", ""),
+#         )
+#
+#         # calculate winning prob for scheduled games and save the findings in the rich table and postgresql
+#         for k, v in cls.get_future_matches().items():
+#             try:
+#                 elo.get_win_prob_write_table(RichTable(), home_team_details=k, away_team=v, comp=league["comp"])
+#             except Exception as e:
+#                 continue
+#
+#         # export the played games results in a CSV file
+#         if league.get("export_results", ""):
+#             elo.export_results(competition_name=league["comp"])
+#
+#     # print the rich table in the terminal
+#     RichTable().see_predictions()
+#
+#     # commit and close the PostgreSQL connection
+#     db = PostgreSQL()
+#     db.close_conn()
+#
+#     # print("[bold magenta]Press any key to end[/bold magenta]")
+#     # input()
 
-    for league in leagues:
-        # get the played and scheduled games
-        cls = ExtractMatches(
-            comp=league["comp"],
-            start_year=league["start_year"],
-            use_db=league.get("use_db", True),
-        )
 
-        # calculate winning prob for played games
-        elo = EloRatings(
-            matches=cls.get_played_matches(),
-            confidence=league["confidence"],
-            misc_league=league.get("misc_league", ""),
-        )
+def run_simulation(start_year, confidence):
+    # Initialize classes and run simulation
+    extractor = ExtractMatches(comp="RO Liga 1", start_year=start_year, use_db=True)
+    elo_ratings = EloRatings(matches=extractor.matches, confidence=confidence, misc_league=False)
 
-        # calculate winning prob for scheduled games and save the findings in the rich table and postgresql
-        for k, v in cls.get_future_matches().items():
-            try:
-                elo.get_win_prob_write_table(RichTable(), home_team_details=k, away_team=v, comp=league["comp"])
-            except Exception as e:
-                continue
+    # Calculate correct predictions and return the result
+    return elo_ratings.get_win_perc()  # Assuming this method returns the number of correct predictions
 
-        # export the played games results in a CSV file
-        if league.get("export_results", ""):
-            elo.export_results(competition_name=league["comp"])
+# Define a range of possible start years and confidence levels
+start_years = range(2016, 2020)  # Example range
+confidence = 0.5
 
-    # print the rich table in the terminal
-    RichTable().see_predictions()
+# Run simulations for each combination and store results
+results = {}
+for start_year in start_years:
+    local_confidence = confidence
+    while local_confidence <= 0.7:
+        correct_predictions, wrong_predictions = run_simulation(start_year, local_confidence)
+        correct_percentage = (correct_predictions / (correct_predictions + wrong_predictions)) * 100
+        results[(start_year, local_confidence)] = {
+            "Predictions": (correct_predictions, wrong_predictions),
+            "Win Percentage": round(correct_percentage, 2),
+        }
+        local_confidence += 0.01
+        local_confidence = round(local_confidence, 2)
 
-    # commit and close the PostgreSQL connection
-    db = PostgreSQL()
-    db.close_conn()
+# Find the combination that yields the highest number of correct predictions
+best_params = max(results, key=lambda x: results[x]["Predictions"][0] / (results[x]["Predictions"][0] + results[x]["Predictions"][1]))
+correct_predictions = results[best_params]['Predictions'][0]
+wrong_predictions = results[best_params]['Predictions'][1]
 
-    # print("[bold magenta]Press any key to end[/bold magenta]")
-    # input()
+for r in results:
+    print(f"{r[0]}: confidence: {r[1]}, correct: {results[r]['Predictions'][0]}, wrong: {results[r]['Predictions'][1]}, win percent: {results[r]['Win Percentage']}")
+
+print(f"\nBest parameters: start_year={best_params[0]}, confidence={best_params[1]} with a win percentage of {round(results[best_params]['Win Percentage'])}% (W: {correct_predictions} / L: {wrong_predictions}).")
