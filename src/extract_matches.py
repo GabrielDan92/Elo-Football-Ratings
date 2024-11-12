@@ -95,7 +95,7 @@ class ExtractMatches:
             else:
                 years = f"{start_year}-{start_year + 1}"
 
-            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
+            url =  f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
 
             # check if the current iterator year doesn't exist in the db
             values = (f"{start_year}%", self.comp)
@@ -139,7 +139,7 @@ class ExtractMatches:
 
         for match in matches:
             date = find_info(match, "date")
-            hour = find_info(match, "start_time", "span", "data-venue-time") or '00:00'
+            hour = find_info(match, "start_time", "span", "data-venue-time") or "00:00"
             score = find_info(match, "score")
             home_team = find_info(match, "home_team")
             away_team = find_info(match, "away_team")
@@ -166,21 +166,29 @@ class ExtractMatches:
 
     def export_historic_data(self):
         if self.use_db:
-            values = [
-                (
-                    f"{date.split(' ')[0]}, {date.split(' ')[1]}",
-                    v["home_team"],
-                    v["away_team"],
-                    v["home_score"],
-                    v["away_score"],
-                    self.comp,
-                )
-                for date, v in self.matches.items()
-            ]
+            values = []
+            for date, v in self.matches.items():
+                if (
+                    v["away_score"] not in ("-", None, "")
+                    and v["home_score"] not in ("-", None, "")
+                    and v["home_team"] not in (None, "")
+                    and v["away_team"] not in (None, "")
+                ):
+                    values.append(
+                        (
+                            f"{date.split(' ')[0]}, {date.split(' ')[1]}",  # Format date
+                            v["home_team"],
+                            v["away_team"],
+                            v["home_score"],
+                            v["away_score"],
+                            self.comp,
+                        )
+                    )
+                else:
+                    print(f"Skipping invalid record: {v}")
 
             self.db.batch_insert(INSERT_PLAYED_GAMES, values)
             self.db.conn.commit()
-            # self.db.close_conn()
         else:
             pd.DataFrame(
                 {

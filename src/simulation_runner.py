@@ -1,97 +1,188 @@
 from collections import defaultdict
+from typing import Dict, Tuple, Optional
+from dataclasses import dataclass
 
-from src.config import MIN_CORRECT_GAMES
+from src.config import MIN_CORRECT_GAMES, SIMULATION_START_YR, SIMULATION_END_YR
 from src.elo_ratings import EloRatings
 from src.extract_matches import ExtractMatches
 
 
+@dataclass
+class SimulationResult:
+    start_year: int
+    confidence: float
+    correct_predictions: int
+    wrong_predictions: int
+    win_percentage: float
+
+
 class LeagueSimulation:
-    def __init__(self, comp):
+    """
+    Simulates a league competition over multiple years with varying confidence levels to find
+    the optimal parameters for predicting match outcomes based on Elo ratings.
+    """
+
+    def __init__(self, comp: str, start_years: range = range(SIMULATION_START_YR, SIMULATION_END_YR)):
+        """
+        Initializes the LeagueSimulation instance with competition and start years.
+
+        Args:
+            comp (str): The competition name.
+            start_years (range): A range of start years for the simulation.
+        """
+        self.start_years = start_years
         self.comp = comp
-        self.results = {}
-        self.yearly_best_params = defaultdict(lambda: None)
-        self.run_simulations(range(2016, 2022))  # Assuming the range of start years is (2016, 2022)
-        self.print_results()
-        self.group_results_by_year()
-        self.display_yearly_summary()
-        print("-" * 20, "\n")
+        self.results: Dict[Tuple[int, float], SimulationResult] = {}
+        self.yearly_best_params: Dict[int, Optional[SimulationResult]] = defaultdict(
+            lambda: None
+        )
 
-    def run_simulation(self, start_year, confidence):
+    def run_simulation(self, start_year: int, confidence: float) -> Tuple[int, int]:
+        """
+        Runs a single simulation for a specific year and confidence level.
+
+        Args:
+            start_year (int): The start year for the simulation.
+            confidence (float): The confidence level for the Elo rating predictions.
+
+        Returns:
+            Tuple[int, int]: A tuple containing the counts of correct and wrong predictions.
+        """
         extractor = ExtractMatches(self.comp, start_year=start_year, use_db=True)
-        elo_ratings = EloRatings(matches=extractor.matches, confidence=confidence, misc_league=False)
-
-        # Calculate correct predictions and return the result
+        elo_ratings = EloRatings(
+            matches=extractor.matches, confidence=confidence, misc_league=False
+        )
         return elo_ratings.get_win_perc()
 
-    def run_simulations(self, start_years):
-        for start_year in start_years:
-            local_confidence = 0.5
-            while local_confidence <= 0.75:
-                correct_predictions, wrong_predictions = self.run_simulation(start_year, local_confidence)
-                try:
-                    correct_percentage = (correct_predictions / (correct_predictions + wrong_predictions)) * 100
-                    self.results[(start_year, local_confidence)] = {
-                        "Predictions": (correct_predictions, wrong_predictions),
-                        "Win Percentage": round(correct_percentage, 2),
-                    }
-                except:
-                    self.results[(start_year, local_confidence)] = {
-                        "Predictions": (0, 0),
-                        "Win Percentage": 0,
-                    }
-                local_confidence += 0.01
-                local_confidence = round(local_confidence, 2)
+    def run_simulations(self, see_complete_logs=False) -> tuple[int, float]:
+        """
+        Runs simulations across specified years and a range of confidence levels,
+        recording results and returning the best overall and yearly best results.
 
-    def find_best_params(self):
-        best_params = max(
-            (x for x in self.results if self.results[x]["Predictions"][0] >= MIN_CORRECT_GAMES),
-            key=lambda x: self.results[x]["Predictions"][0] / (
-                        self.results[x]["Predictions"][0] + self.results[x]["Predictions"][1]),
-            default=None
-        )
-        if not best_params:
-            best_params = (0, 0)
-            correct_predictions = 0
-            wrong_predictions = 0
-            win_percentage = 0
+        Returns:
+            Tuple[int, float]: The best start year and confidence level.
+        """
+        for start_year in self.start_years:
+            for local_confidence in [round(0.5 + i * 0.01, 2) for i in range(26)]:
+                self._record_simulation_result(start_year, local_confidence)
+
+        best_result = self._display_best_result()
+
+        if see_complete_logs:
+            self._group_yearly_best_results()
+            self._display_yearly_summary()
+            self.final_results()
+
+        if best_result:
+            return best_result.start_year, best_result.confidence
+
+
+    def _record_simulation_result(self, start_year: int, confidence: float) -> None:
+        """
+        Records the results of a single simulation, including correct and wrong prediction counts.
+
+        Args:
+            start_year (int): The start year of the simulation.
+            confidence (float): The confidence level used in the simulation.
+        """
+        try:
+            correct, wrong = self.run_simulation(start_year, confidence)
+            win_percentage = (
+                (correct / (correct + wrong)) * 100 if correct + wrong > 0 else 0
+            )
+            self.results[(start_year, confidence)] = SimulationResult(
+                start_year=start_year,
+                confidence=confidence,
+                correct_predictions=correct,
+                wrong_predictions=wrong,
+                win_percentage=round(win_percentage, 2),
+            )
+        except Exception as e:
+            print(str(e))
+            # Logs zero predictions if an error occurs
+            self.results[(start_year, confidence)] = SimulationResult(
+                start_year=start_year,
+                confidence=confidence,
+                correct_predictions=0,
+                wrong_predictions=0,
+                win_percentage=0.0,
+            )
+
+    def _find_best_params(self) -> Optional[SimulationResult]:
+        """
+        Finds the best parameters based on the highest win percentage for valid results.
+
+        Returns:
+            Optional[SimulationResult]: The best simulation result based on the highest win percentage.
+        """
+        valid_results = {
+            k: v
+            for k, v in self.results.items()
+            if v.correct_predictions >= MIN_CORRECT_GAMES
+        }
+        if not valid_results:
+            return None
+
+        best_key = max(valid_results, key=lambda k: valid_results[k].win_percentage)
+        return valid_results[best_key]
+
+    def _display_best_result(self) -> Optional[SimulationResult]:
+        """
+        Displays the best parameters across all simulations.
+
+        Returns:
+            Optional[SimulationResult]: The best simulation result with year, confidence, correct/wrong predictions,
+                                        and win percentage.
+        """
+        best_result = self._find_best_params()
+
+        if best_result:
+            print("\n", "-" * 80)
+            print(
+                f"{self.comp} Best Parameters: start_year={best_result.start_year}, "
+                f"confidence={best_result.confidence}, Win Percentage: {best_result.win_percentage}% "
+                f"(W: {best_result.correct_predictions} / L: {best_result.wrong_predictions})"
+            )
         else:
-            correct_predictions = self.results[best_params]['Predictions'][0]
-            wrong_predictions = self.results[best_params]['Predictions'][1]
-            win_percentage = self.results[best_params]['Win Percentage']
+            print(f"{self.comp} - No valid simulation results found.")
 
-        return best_params, correct_predictions, wrong_predictions, win_percentage
+        return best_result
 
-    def print_results(self):
-        print("-" * 20)
-        # for r in self.results:
-        #     print(
-        #         f"{self.comp} {r[0]}: confidence: {r[1]}, correct: {self.results[r]['Predictions'][0]}, wrong: {self.results[r]['Predictions'][1]}, win percent: {self.results[r]['Win Percentage']}")
+    def _group_yearly_best_results(self) -> None:
+        """
+        Groups results by year and identifies the best simulation for each year.
+        """
+        for (year, confidence), result in self.results.items():
+            if result.correct_predictions < MIN_CORRECT_GAMES:
+                continue
 
-        best_params, correct_predictions, wrong_predictions, win_percentage = self.find_best_params()
-        print(
-            f"{self.comp} best parameters: start_year={best_params[0]}, confidence={best_params[1]} with a win percentage of {round(win_percentage)}% (W: {correct_predictions} / L: {wrong_predictions}).")
+            current_best = self.yearly_best_params[year]
+            if not current_best or result.win_percentage > current_best.win_percentage:
+                self.yearly_best_params[year] = result
 
-    def group_results_by_year(self):
-        for key in self.results:
-            year = key[0]  # Assuming `key[0]` contains the year
-            confidence_yearly = key[1]  # Assuming `key[1]` contains the confidence level
-            correct, wrong = self.results[key]["Predictions"]
-
-            if correct < MIN_CORRECT_GAMES:
-                continue  # Skip entries with fewer than 45 correct predictions
-
-            win_percent = correct / (correct + wrong)
-
-            # Check if this is the best entry for the year
-            if (self.yearly_best_params[year] is None) or (win_percent > self.yearly_best_params[year]["win_percent"]):
-                self.yearly_best_params[year] = {
-                    "confidence": confidence_yearly,
-                    "win_percent": win_percent,
-                    "correct": correct,
-                    "wrong": wrong
-                }
-
-    def display_yearly_summary(self):
+    def _display_yearly_summary(self) -> None:
+        """
+        Displays a summary of the best simulation parameters and win percentage for each year.
+        """
         for year, data in self.yearly_best_params.items():
             print(
-                f"{self.comp} year: {year}, Best Confidence: {data['confidence']}, Win Percent: {round(data['win_percent'] * 100)}%, Correct: {data['correct']}, Wrong: {data['wrong']}")
+                f"{self.comp} Year: {year}, Best Confidence: {data.confidence}, "
+                f"Win Percent: {round(data.win_percentage)}%, "
+                f"Correct: {data.correct_predictions}, Wrong: {data.wrong_predictions}"
+            )
+
+    def final_results(self) -> None:
+        """
+        Displays a summary of all simulation results, including start year, confidence level,
+        correct and wrong predictions, and win percentage for each simulation run.
+        """
+        for (year, confidence), result in self.results.items():
+            # Accessing attributes directly from the SimulationResult instance
+            correct = result.correct_predictions
+            wrong = result.wrong_predictions
+            win_percent = result.win_percentage
+            print(
+                f"{self.comp} {year}: Confidence={confidence}, Correct={correct}, "
+                f"Wrong={wrong}, Win Percent={win_percent}%"
+            )
+        print("-" * 80, "\n")
