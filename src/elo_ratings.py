@@ -147,6 +147,7 @@ class EloRatings:
         if self.elo["teams"][away_team] < 30:
             away_team += f' ({self.elo["teams"][away_team]})'
 
+        w,l = self.get_win_perc()
         kwargs_dict = {
             "date": date,
             "hour": hour,
@@ -155,8 +156,8 @@ class EloRatings:
             "win_prob": win_prob,
             "comp": comp,
             "confidence": self.confidence,
-            "correct_pred": self.correct_pred,
-            "wrong_pred": self.wrong_pred,
+            "correct_pred": w,
+            "wrong_pred": l,
             "correct_pred_draw": self.correct_pred_draw,
             "wrong_pred_draw": self.wrong_pred_draw,
         }

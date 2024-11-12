@@ -19,7 +19,7 @@ class ExtractMatches:
     It supports HTML parsing, exporting data to CSV, and loading data from previous extractions.
     """
 
-    def __init__(self, comp, start_year, use_db):
+    def __init__(self, comp, start_year, use_db, get_future_matches=False):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
@@ -34,7 +34,8 @@ class ExtractMatches:
         self.load_historical_data(start_year)
 
         # # extract current year's played and future matches
-        # self.extract_current_season_data()
+        if get_future_matches:
+            self.extract_current_season_data()
         # self.export_historic_data()
 
     def load_historical_data(self, start_year):
@@ -90,7 +91,7 @@ class ExtractMatches:
             if "custom_link" in MAP[self.comp].keys():
                 if start_year == curr_year - 1:
                     break
-                years = f"{start_year + 1}"
+                years = f"{start_year}"
             else:
                 years = f"{start_year}-{start_year + 1}"
 
