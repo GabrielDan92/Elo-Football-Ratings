@@ -41,9 +41,7 @@ GET_MATCHES_IN_TARGET_YEAR = """
 INSERT_PLAYED_GAMES = """
     INSERT INTO played_games (date_hour, home_team, away_team, home_score, away_score, competition)
     VALUES (%s, %s, %s, %s, %s, %s)
-    ON CONFLICT (date_hour, home_team) DO
-        UPDATE SET
-            competition = EXCLUDED.competition
+    ON CONFLICT (date_hour, home_team) DO NOTHING
 """
 
 INSERT_SCHEDULED_GAMES = """

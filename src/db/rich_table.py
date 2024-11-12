@@ -36,8 +36,8 @@ class RichTable(metaclass=Singleton):
         competition = f"{kwargs['comp']} ({round(kwargs['confidence']*100)}% confidence)"
         prediction_percent = f"[bold][green]{str(round(kwargs['win_prob']*100))}%[/green][/bold]"
         prediction_percent_raw = f"{str(round(kwargs['win_prob']*100))}%"
-        corr_predictions = self.calculate_correct_predictions(kwargs, 'correct_pred', 'wrong_pred')
-        corr_predictions_draw = self.calculate_correct_predictions(kwargs, 'correct_pred_draw', 'wrong_pred_draw')
+        corr_predictions = self.calculate_correct_predictions(kwargs, "correct_pred", "wrong_pred")
+        corr_predictions_draw = self.calculate_correct_predictions(kwargs, "correct_pred_draw", "wrong_pred_draw")
 
         # populate the matches dict
         key = f"{time} {teams}"

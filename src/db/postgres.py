@@ -25,7 +25,6 @@ class PostgreSQL(metaclass=Singleton):
     def create_games_tables(self):
         # create the required 'played_games' and 'scheduled_games' tables in the database
         with self.conn.cursor() as cur:
-            cur.execute(DROP_SCHEDULED_GAMES_TABLE)
             cur.execute(CREATE_PLAYED_GAMES_TABLE)
             cur.execute(CREATE_SCHEDULED_GAMES_TABLE)
 
@@ -33,6 +32,8 @@ class PostgreSQL(metaclass=Singleton):
         # execute a batch insert operation using the provided SQL query and values.
         with self.conn.cursor() as cur:
             cur.executemany(query, values)
+
+        self.conn.commit()
 
     def query(self, query, values=None):
         # execute a query on the database and return the fetched results.

@@ -65,7 +65,9 @@ class EloRatings:
 
             if elo["teams"][home_t] >= first_match and elo["teams"][away_t] >= first_match:
                 # calculate winning probability for home team and check if the prediction was correct
-                win_prob = self.winning_prob(elo["ratings"][home_t], elo["ratings"][away_t])
+                win_prob = self.winning_prob(
+                    elo["ratings"][home_t], elo["ratings"][away_t]
+                )
                 self.measure_win_perc(win_prob=win_prob, home_s=home_s, away_s=away_s)
 
                 self.matches[match]["prediction"] = round(win_prob, 2)
@@ -82,7 +84,7 @@ class EloRatings:
                     "loss": {"home": 0, "away": 1},
                     "tie": {"home": 0.5, "away": 0.5},
                 }
-                outcome = "win" if home_s > away_s else "loss" if home_s < away_s else "tie"
+                outcome =  "win" if home_s > away_s else "loss" if home_s < away_s else "tie"
 
                 home_weight = outcome_weights[outcome]["home"]
                 away_weight = outcome_weights[outcome]["away"]
@@ -147,6 +149,7 @@ class EloRatings:
         if self.elo["teams"][away_team] < 30:
             away_team += f' ({self.elo["teams"][away_team]})'
 
+        w, l = self.get_win_perc()
         kwargs_dict = {
             "date": date,
             "hour": hour,
@@ -155,8 +158,8 @@ class EloRatings:
             "win_prob": win_prob,
             "comp": comp,
             "confidence": self.confidence,
-            "correct_pred": self.correct_pred,
-            "wrong_pred": self.wrong_pred,
+            "correct_pred": w,
+            "wrong_pred": l,
             "correct_pred_draw": self.correct_pred_draw,
             "wrong_pred_draw": self.wrong_pred_draw,
         }
