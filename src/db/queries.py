@@ -19,6 +19,7 @@ CREATE_SCHEDULED_GAMES_TABLE = f"""
         competition                         varchar(200),
         correct_predictions                 varchar(200),
         correct_predictions_with_draws      varchar(200),
+        bet                                 boolean DEFAULT FALSE,
         added_at                            timestamp DEFAULT current_timestamp,
         PRIMARY KEY (match_time, teams)
     )
@@ -70,11 +71,19 @@ select * from scheduled_games
 where date(match_time) >= CURRENT_DATE
 order by match_time asc, correct_predictions desc;
 
-with cte as (select *,
-                    dense_rank() over (order by date(match_time)) as day
-             from scheduled_games
-             where date(match_time) >= CURRENT_DATE
-             order by day, competition)
-select * from cte where day < 5
-order by day, competition desc;
+WITH cte AS (SELECT *,
+                    dense_rank() OVER (ORDER BY date(match_time)) AS day
+             FROM scheduled_games
+             WHERE date(match_time) >= CURRENT_DATE
+             ORDER BY day, competition)
+SELECT *
+FROM cte
+WHERE day < 5
+AND bet = FALSE
+ORDER BY
+    day,
+    competition DESC;
+    
+update scheduled_games set bet = TRUE
+where teams = '';
 """

@@ -22,7 +22,7 @@ class LeagueSimulation:
     the optimal parameters for predicting match outcomes based on Elo ratings.
     """
 
-    def __init__(self, comp: str, start_years: range = range(SIMULATION_START_YR, SIMULATION_END_YR)):
+    def __init__(self, comp: str, start_years: range = range(SIMULATION_START_YR, SIMULATION_END_YR), misc_league=False):
         """
         Initializes the LeagueSimulation instance with competition and start years.
 
@@ -32,10 +32,9 @@ class LeagueSimulation:
         """
         self.start_years = start_years
         self.comp = comp
+        self.misc_league = misc_league
         self.results: Dict[Tuple[int, float], SimulationResult] = {}
-        self.yearly_best_params: Dict[int, Optional[SimulationResult]] = defaultdict(
-            lambda: None
-        )
+        self.yearly_best_params: Dict[int, Optional[SimulationResult]] = defaultdict(lambda: None)
 
     def run_simulation(self, start_year: int, confidence: float) -> Tuple[int, int]:
         """
@@ -49,9 +48,7 @@ class LeagueSimulation:
             Tuple[int, int]: A tuple containing the counts of correct and wrong predictions.
         """
         extractor = ExtractMatches(self.comp, start_year=start_year, use_db=True)
-        elo_ratings = EloRatings(
-            matches=extractor.matches, confidence=confidence, misc_league=False
-        )
+        elo_ratings = EloRatings(matches=extractor.matches, confidence=confidence, misc_league=self.misc_league)
         return elo_ratings.get_win_perc()
 
     def run_simulations(self, see_complete_logs=False) -> tuple[int, float]:
