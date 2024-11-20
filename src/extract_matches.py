@@ -30,13 +30,9 @@ class ExtractMatches:
         self.use_db = use_db
         self.db = PostgreSQL()
 
-        # get played matches from start year until previous year
+        # get played matches from the start year until present
         self.load_historical_data(start_year)
-
-        # # extract current year's played and future matches
-        if get_future_matches:
-            self.extract_current_season_data()
-        # self.export_historic_data()
+        self.extract_current_season_data()
 
     def load_historical_data(self, start_year):
         if self.use_db:
@@ -114,6 +110,7 @@ class ExtractMatches:
     def extract_current_season_data(self):
         url = f"{self.main_link}/schedule/{MAP[self.comp]['suffix']}"
         self.parse_html(url=url)
+        self.export_historic_data()
 
     def parse_html(self, url):
         print(f"Access {url}")
@@ -146,7 +143,7 @@ class ExtractMatches:
 
             if score:
                 # we either have a score, so this is a played game
-                key = f"{date} {hour} {home_team}"
+                key = f"{date}, {hour} {home_team}"
                 self.matches[key] = {
                     "home_team": home_team,
                     "away_team": away_team,
@@ -176,7 +173,7 @@ class ExtractMatches:
                 ):
                     values.append(
                         (
-                            f"{date.split(' ')[0]}, {date.split(' ')[1]}",  # Format date
+                            f"{date.split(' ')[0]} {date.split(' ')[1].split('_')[0]}",  # Format date
                             v["home_team"],
                             v["away_team"],
                             v["home_score"],
