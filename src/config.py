@@ -96,7 +96,7 @@ leagues = (
     {"comp": "UEFA Nations League", "start_year": 2018, "confidence": 0.6, "misc_league": True},
 )
 
-user_agents = [
+user_agents = (
     "Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Falkon/22.12.1 QtWebEngine/5.15.13 Chrome/87.0.4280.144 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.43",
     "Mozilla/5.0 (Windows NT 10.0; WOW64) SalamWeb/1.0.0.20 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.130 Safari/537.36",
@@ -115,4 +115,4 @@ user_agents = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_18_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-]
+)
