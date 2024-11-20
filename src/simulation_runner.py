@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Dict, Tuple, Optional, Any
 from dataclasses import dataclass
 
-from src.config import MIN_CORRECT_GAMES, SIMULATION_START_YR, SIMULATION_END_YR
+from src.config import MIN_CORRECT_GAMES, SIM_START_YR, SIM_END_YR
 from src.elo_ratings import EloRatings
 from src.extract_matches import ExtractMatches
 
@@ -22,16 +22,16 @@ class LeagueSimulation:
     the optimal parameters for predicting match outcomes based on Elo ratings.
     """
 
-    def __init__(self, comp: str, years_range: range = range(SIMULATION_START_YR, SIMULATION_END_YR), misc_league=False):
+    def __init__(self, competition: str, years_range: range = range(SIM_START_YR, SIM_END_YR), misc_league=False):
         """
         Initializes the LeagueSimulation instance with competition and start years.
 
         Args:
-            comp (str): The competition name.
+            competition (str): The competition name.
             years_range (range): A range of start years for the simulation.
         """
         self.years_range = years_range
-        self.comp = comp
+        self.comp = competition
         self.misc_league = misc_league
         self.results: Dict[Tuple[int, float], SimulationResult] = {}
         self.yearly_best_params: Dict[int, Optional[SimulationResult]] = defaultdict(lambda: None)
@@ -152,7 +152,6 @@ class LeagueSimulation:
         best_result = self._find_best_params()
 
         if best_result:
-            print("\n", "-" * 80)
             print(
                 f"{self.comp} Best Parameters: start_year={best_result.start_year}, "
                 f"confidence={best_result.confidence}, Win Percentage: {best_result.win_percentage}% "
@@ -160,6 +159,8 @@ class LeagueSimulation:
             )
         else:
             print(f"{self.comp} - No valid simulation results found.")
+
+        print("\n", "-" * 80)
 
         return best_result
 

@@ -36,27 +36,28 @@ class ExtractMatches:
 
     def load_historical_data(self, start_year):
         if self.use_db:
-            if "custom_link" in MAP[self.comp].keys():
-                start_year += 1
+            # if "custom_link" in MAP[self.comp].keys():
+            #     start_year += 1
 
-            values = (f"{start_year}%", self.comp)
-            records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
+            for year in range(start_year, datetime.date.today().year):
+                values = (f"{year}%", self.comp)
+                records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
-            if records_count == 0:
-                # extract the matches if they are not already saved in the db
-                self.extract_historic_data(start_year)
-            else:
-                # load the matches from the db
-                query = GET_MATCHES(competition=self.comp, year=start_year)
-                records = self.db.query(query)
+                if records_count == 0:
+                    # extract the matches if they are not already saved in the db
+                    self.extract_historic_data(year)
+                else:
+                    # load the matches from the db
+                    query = GET_MATCHES(competition=self.comp, year=start_year)
+                    records = self.db.query(query)
 
-                for i, record in enumerate(records):
-                    self.matches[f"{record[0]}_({i})"] = {
-                        "home_team": record[1],
-                        "away_team": record[2],
-                        "home_score": record[3],
-                        "away_score": record[4],
-                    }
+                    for i, record in enumerate(records):
+                        self.matches[f"{record[0]}_({i})"] = {
+                            "home_team": record[1],
+                            "away_team": record[2],
+                            "home_score": record[3],
+                            "away_score": record[4],
+                        }
         else:
             # extract or load played matches from start year until previous year
             try:
@@ -85,15 +86,15 @@ class ExtractMatches:
 
         while start_year < curr_year:
             if "custom_link" in MAP[self.comp].keys():
-                if start_year == curr_year - 1:
-                    break
+                # if start_year == curr_year - 1:
+                #     break
                 years = f"{start_year}"
             else:
                 years = f"{start_year}-{start_year + 1}"
 
             url =  f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
 
-            # check if the current iterator year doesn't exist in the db
+            # check if the current year matches are not in db
             values = (f"{start_year}%", self.comp)
             records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
