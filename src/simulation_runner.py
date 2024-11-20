@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Any
 from dataclasses import dataclass
 
-from src.config import MIN_CORRECT_GAMES, SIMULATION_START_YR, SIMULATION_END_YR
+from src.config import MIN_CORRECT_GAMES, SIM_START_YR, SIM_END_YR
 from src.elo_ratings import EloRatings
 from src.extract_matches import ExtractMatches
 
@@ -22,19 +22,38 @@ class LeagueSimulation:
     the optimal parameters for predicting match outcomes based on Elo ratings.
     """
 
-    def __init__(self, comp: str, start_years: range = range(SIMULATION_START_YR, SIMULATION_END_YR), misc_league=False):
+    def __init__(self, competition: str, years_range: range = range(SIM_START_YR, SIM_END_YR), misc_league=False):
         """
         Initializes the LeagueSimulation instance with competition and start years.
 
         Args:
-            comp (str): The competition name.
-            start_years (range): A range of start years for the simulation.
+            competition (str): The competition name.
+            years_range (range): A range of start years for the simulation.
         """
-        self.start_years = start_years
-        self.comp = comp
+        self.years_range = years_range
+        self.comp = competition
         self.misc_league = misc_league
         self.results: Dict[Tuple[int, float], SimulationResult] = {}
         self.yearly_best_params: Dict[int, Optional[SimulationResult]] = defaultdict(lambda: None)
+        self.extractor = None
+        self.matches = None
+        self.future_matches = None
+        self.matches_from_best_year = None
+
+        # Extract played and future matches
+        self._get_all_matches()
+
+    def _get_all_matches(self):
+        self.extractor = ExtractMatches(self.comp, start_year=self.years_range[0], use_db=True)
+        self.matches = self.extractor.matches
+        self.future_matches = self.extractor.future_matches
+
+    def _filter_matches_by_period(self, start_year: int) -> Dict[str, Any]:
+        end_year = self.years_range[-1]
+        return {
+            k: v for k, v in self.matches.items()
+            if start_year <= int(k.split(',')[0].split('-')[0]) <= end_year
+        }
 
     def run_simulation(self, start_year: int, confidence: float) -> Tuple[int, int]:
         """
@@ -47,8 +66,11 @@ class LeagueSimulation:
         Returns:
             Tuple[int, int]: A tuple containing the counts of correct and wrong predictions.
         """
-        extractor = ExtractMatches(self.comp, start_year=start_year, use_db=True)
-        elo_ratings = EloRatings(matches=extractor.matches, confidence=confidence, misc_league=self.misc_league)
+
+        # get ratings only for matches in the given period
+        matches_in_period = self._filter_matches_by_period(start_year)
+
+        elo_ratings = EloRatings(matches=matches_in_period, confidence=confidence, misc_league=self.misc_league)
         return elo_ratings.get_win_perc()
 
     def run_simulations(self, see_complete_logs=False) -> tuple[int, float]:
@@ -59,11 +81,11 @@ class LeagueSimulation:
         Returns:
             Tuple[int, float]: The best start year and confidence level.
         """
-        for start_year in self.start_years:
+        for start_year in self.years_range:
             for local_confidence in [round(0.5 + i * 0.01, 2) for i in range(26)]:
                 self._record_simulation_result(start_year, local_confidence)
 
-        best_result = self._display_best_result()
+        best_result = self._get_best_result()
 
         if see_complete_logs:
             self._group_yearly_best_results()
@@ -71,8 +93,9 @@ class LeagueSimulation:
             self.final_results()
 
         if best_result:
+            # keep only matches from the best year going forward
+            self.matches_from_best_year = self._filter_matches_by_period(best_result.start_year)
             return best_result.start_year, best_result.confidence
-
 
     def _record_simulation_result(self, start_year: int, confidence: float) -> None:
         """
@@ -84,9 +107,7 @@ class LeagueSimulation:
         """
         try:
             correct, wrong = self.run_simulation(start_year, confidence)
-            win_percentage = (
-                (correct / (correct + wrong)) * 100 if correct + wrong > 0 else 0
-            )
+            win_percentage = (correct / (correct + wrong)) * 100 if correct + wrong > 0 else 0
             self.results[(start_year, confidence)] = SimulationResult(
                 start_year=start_year,
                 confidence=confidence,
@@ -112,18 +133,15 @@ class LeagueSimulation:
         Returns:
             Optional[SimulationResult]: The best simulation result based on the highest win percentage.
         """
-        valid_results = {
-            k: v
-            for k, v in self.results.items()
-            if v.correct_predictions >= MIN_CORRECT_GAMES
-        }
+        valid_results = {k: v for k, v in self.results.items() if v.correct_predictions >= MIN_CORRECT_GAMES}
+
         if not valid_results:
             return None
 
-        best_key = max(valid_results, key=lambda k: valid_results[k].win_percentage)
-        return valid_results[best_key]
+        return max(valid_results.values(), key=lambda result: result.win_percentage)
 
-    def _display_best_result(self) -> Optional[SimulationResult]:
+
+    def _get_best_result(self) -> Optional[SimulationResult]:
         """
         Displays the best parameters across all simulations.
 
@@ -134,7 +152,6 @@ class LeagueSimulation:
         best_result = self._find_best_params()
 
         if best_result:
-            print("\n", "-" * 80)
             print(
                 f"{self.comp} Best Parameters: start_year={best_result.start_year}, "
                 f"confidence={best_result.confidence}, Win Percentage: {best_result.win_percentage}% "
@@ -142,6 +159,8 @@ class LeagueSimulation:
             )
         else:
             print(f"{self.comp} - No valid simulation results found.")
+
+        print("\n", "-" * 80)
 
         return best_result
 
