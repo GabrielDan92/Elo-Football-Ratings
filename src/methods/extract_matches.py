@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from config import MAP, user_agents
+from src.config import MAP, user_agents
 from src.db.postgres import PostgreSQL
 from src.db.queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
 
