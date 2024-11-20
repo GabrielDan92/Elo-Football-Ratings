@@ -3,8 +3,8 @@ from typing import Dict, Tuple, Optional, Any
 from dataclasses import dataclass
 
 from src.config import MIN_CORRECT_GAMES, SIM_START_YR, SIM_END_YR
-from src.elo_ratings import EloRatings
-from src.extract_matches import ExtractMatches
+from src.methods.elo_ratings import EloRatings
+from src.methods.extract_matches import ExtractMatches
 
 
 @dataclass

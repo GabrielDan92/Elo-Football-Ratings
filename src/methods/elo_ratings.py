@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from config import (
+from src.config import (
     INITIAL_ELO_RATING,
     FIRST_MATCH,
     ELO_LOWER_BRACKET,
@@ -205,8 +205,8 @@ class EloRatings:
         Export played matches results, including date, teams, scores, predictions, and Elo ratings to a CSV.
         """
 
-        if not os.path.exists("./archive"):
-            os.mkdir("./archive")
+        if not os.path.exists("../archive"):
+            os.mkdir("../archive")
 
         df = pd.DataFrame(self.matches.values())
         df["date"] = self.matches.keys()

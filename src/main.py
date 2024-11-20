@@ -1,8 +1,8 @@
-from elo_ratings import EloRatings
-from src.config import DEFAULT_START_YEAR, DEFAULT_CONFIDENCE, leagues
+from src.methods.elo_ratings import EloRatings
+from src.config import DEFAULT_CONFIDENCE, leagues
 from src.db.postgres import PostgreSQL
 from src.db.rich_table import RichTable
-from src.simulation_runner import LeagueSimulation
+from src.methods.simulation_runner import LeagueSimulation
 
 
 def process_league(league):
