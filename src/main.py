@@ -13,7 +13,6 @@ def process_league(league):
         start_year, confidence = simulation.run_simulations(see_complete_logs=False)
     except Exception as e:
         print(f"Error: <{str(e)}> for competition: {league["comp"]}")
-        confidence = DEFAULT_CONFIDENCE
         return False
 
     # Calculate Elo ratings for played matches
@@ -44,12 +43,7 @@ def process_league(league):
 
 
 def main():
-    failed_leagues = []
-
-    for league in leagues:
-        succesful_run = process_league(league)
-        if not succesful_run:
-            failed_leagues.append(league["comp"])
+    failed_leagues = [league["comp"] for league in leagues if not process_league(league)]
 
     RichTable().see_predictions()
 
