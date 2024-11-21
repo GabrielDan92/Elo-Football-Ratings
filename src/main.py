@@ -45,7 +45,6 @@ def process_league(league):
 
 def main():
     failed_leagues = [league["comp"] for league in leagues if not process_league(league)]
-
     RichTable().see_predictions()
     PostgreSQL().close_conn()
 
