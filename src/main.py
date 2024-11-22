@@ -6,14 +6,14 @@ from src.methods.simulation_runner import LeagueSimulation
 
 
 def process_league(league):
-    misc_league = league.get("misc_league", None)
     # get the year/confidence combination that yields the highest number of correct predictions
+    misc_league = league.get("misc_league", None)
     simulation = LeagueSimulation(competition=league["comp"], misc_league=misc_league)
+
     try:
         start_year, confidence = simulation.run_simulations(see_complete_logs=False)
     except Exception as e:
         print(f"Error: <{str(e)}> for competition: {league["comp"]}")
-        confidence = DEFAULT_CONFIDENCE
         return False
 
     # Calculate Elo ratings for played matches
@@ -44,18 +44,9 @@ def process_league(league):
 
 
 def main():
-    failed_leagues = []
-
-    for league in leagues:
-        succesful_run = process_league(league)
-        if not succesful_run:
-            failed_leagues.append(league["comp"])
-
+    failed_leagues = [league["comp"] for league in leagues if not process_league(league)]
     RichTable().see_predictions()
-
-    # Commit and close database connection
-    db = PostgreSQL()
-    db.close_conn()
+    PostgreSQL().close_conn()
 
     if failed_leagues:
         print(f"The following leagues failed to run: {failed_leagues}")
