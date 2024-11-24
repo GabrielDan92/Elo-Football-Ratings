@@ -36,9 +36,8 @@ def process_league(league):
             print(str(e))
             continue
 
-    # Optionally export the results to a CSV
-    if league.get("export_results", ""):
-        elo.export_results(competition_name=league["comp"])
+    # export the results to a CSV
+    elo.export_results(competition_name=league["comp"], matches=simulation.matches)
 
     return True
 

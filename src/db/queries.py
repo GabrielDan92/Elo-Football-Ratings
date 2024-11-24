@@ -13,6 +13,7 @@ CREATE_PLAYED_GAMES_TABLE = """
 
 CREATE_SCHEDULED_GAMES_TABLE = f"""
     CREATE TABLE IF NOT EXISTS scheduled_games (
+        id INT GENERATED ALWAYS AS IDENTITY,
         match_time                          varchar(200),
         teams                               varchar(200),
         prediction                          varchar(200),

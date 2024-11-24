@@ -200,7 +200,7 @@ class EloRatings:
     def get_win_perc(self):
         return self.correct_pred, self.wrong_pred
 
-    def export_results(self, competition_name: str) -> None:
+    def export_results(self, competition_name: str, matches) -> None:
         """
         Export played matches results, including date, teams, scores, predictions, and Elo ratings to a CSV.
         """
