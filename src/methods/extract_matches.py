@@ -45,6 +45,7 @@ class ExtractMatches:
 
                 if records_count == 0:
                     # extract the matches if they are not already saved in the db
+                    print(f"load_historical_data: No matches in year: {year} for {self.comp}.")
                     self.extract_historic_data(year)
                 else:
                     # load the matches from the db
@@ -99,6 +100,7 @@ class ExtractMatches:
             records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
             if records_count == 0:
+                print(f"extract_historic_data: No matches in year: {start_year} for {self.comp}.")
                 self.parse_html(url=url)
             else:
                 print(f"Season {years} already exists in the db.")
@@ -159,8 +161,8 @@ class ExtractMatches:
                 ):
                     self.future_matches[date, hour, home_team] = away_team
 
-        # prevent making more than 20 requests per minute
-        time.sleep(3.1)
+        # prevent making more than 12 requests per minute
+        time.sleep(5)
 
     def export_historic_data(self):
         if self.use_db:

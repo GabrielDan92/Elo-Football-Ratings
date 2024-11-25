@@ -89,7 +89,7 @@ class EloRatings:
                 home_weight = outcome_weights[outcome]["home"]
                 away_weight = outcome_weights[outcome]["away"]
 
-                # award or penalize the teams +50% if the outcome was not expected
+                # award or penalize the teams +50% if the outcome was really unexpected
                 if (outcome == "win" and win_prob <= 0.3) or (outcome == "loss" and win_prob >= 0.7):
                     k_home *= 1.5
                     k_away *= 1.5
