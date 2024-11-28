@@ -1,7 +1,7 @@
 import datetime
 import random
 import time
-
+import os
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -9,6 +9,11 @@ from bs4 import BeautifulSoup
 from src.config import MAP, user_agents
 from src.db.postgres import PostgreSQL
 from src.db.queries import GET_MATCHES_IN_TARGET_YEAR, GET_MATCHES, INSERT_PLAYED_GAMES
+import urllib3
+
+
+# Suppress the InsecureRequestWarning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class ExtractMatches:
@@ -19,13 +24,11 @@ class ExtractMatches:
     It supports HTML parsing, exporting data to CSV, and loading data from previous extractions.
     """
 
-    def __init__(self, comp, start_year, use_db, get_future_matches=False):
+    def __init__(self, comp, start_year, use_db):
         self.matches = {}
         self.future_matches = {}
         self.main_link = f"https://fbref.com/en/comps/{MAP[comp]['comp_id']}"
-        self.export_path = (
-            f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
-        )
+        self.export_path = f"archive/{start_year}-{datetime.date.today().year}-{comp}.csv"
         self.comp = comp
         self.use_db = use_db
         self.db = PostgreSQL()
@@ -33,6 +36,13 @@ class ExtractMatches:
         # get played matches from the start year until present
         self.load_historical_data(start_year)
         self.extract_current_season_data()
+
+    def _generate_dict_key(self, **kwargs):
+        # key is in the format: [date, hour home_team]
+        if 'record' in kwargs:
+            return f"{kwargs['record'][0]} {kwargs['record'][1]}"
+        else:
+            return f"{kwargs['date']}, {kwargs['hour']} {kwargs['home_team']}"
 
     def load_historical_data(self, start_year):
         if self.use_db:
@@ -45,15 +55,17 @@ class ExtractMatches:
 
                 if records_count == 0:
                     # extract the matches if they are not already saved in the db
-                    print(f"load_historical_data: No matches in year: {year} for {self.comp}.")
+                    print(f"load_historical_data: No matches in year {year} for {self.comp}.")
                     self.extract_historic_data(year)
                 else:
                     # load the matches from the db
+                    print(f"load_historical_data: Season {year} already exists in the db. {records_count} records.")
                     query = GET_MATCHES(competition=self.comp, year=start_year)
                     records = self.db.query(query)
 
                     for i, record in enumerate(records):
-                        self.matches[f"{record[0]}_({i})"] = {
+                        key = self._generate_dict_key(record=record)
+                        self.matches[key] = {
                             "home_team": record[1],
                             "away_team": record[2],
                             "home_score": record[3],
@@ -93,17 +105,16 @@ class ExtractMatches:
             else:
                 years = f"{start_year}-{start_year + 1}"
 
-            url =  f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
-
+            url = f"{self.main_link}/{years}/schedule/{years}-{MAP[self.comp]['suffix']}"
             # check if the current year matches are not in db
             values = (f"{start_year}%", self.comp)
             records_count = self.db.query(GET_MATCHES_IN_TARGET_YEAR, values)[0][0]
 
             if records_count == 0:
-                print(f"extract_historic_data: No matches in year: {start_year} for {self.comp}.")
+                print(f"extract_historic_data: No matches in year {start_year} for {self.comp}.")
                 self.parse_html(url=url)
             else:
-                print(f"Season {years} already exists in the db.")
+                print(f"extract_historic_data: Season {years} already exists in the db.")
 
             start_year += 1
 
@@ -118,7 +129,7 @@ class ExtractMatches:
     def parse_html(self, url):
         print(f"Access {url}")
         headers = {"User-Agent": random.choice(user_agents)}
-        html = requests.get(url=url, headers=headers)
+        html = requests.get(url=url, headers=headers, verify=False)
         soup = BeautifulSoup(html.text, "html.parser")
         matches = soup.find("table").find("tbody").find_all("tr")
 
@@ -137,6 +148,7 @@ class ExtractMatches:
             except:
                 return None
 
+        matches_added = 0
         for match in matches:
             date = find_info(match, "date")
             hour = find_info(match, "start_time", "span", "data-venue-time") or "00:00"
@@ -146,13 +158,14 @@ class ExtractMatches:
 
             if score:
                 # we either have a score, so this is a played game
-                key = f"{date}, {hour} {home_team}"
+                key = self._generate_dict_key(date=date, hour=hour, home_team=home_team)
                 self.matches[key] = {
                     "home_team": home_team,
                     "away_team": away_team,
                     "home_score": score.replace("–", "-")[0],
                     "away_score": score.replace("–", "-")[2],
                 }
+                matches_added += 1
             elif date and hour:
                 # or we don't have a score, so this is a future game *if it has a scheduled date & hour
                 if (
@@ -160,6 +173,8 @@ class ExtractMatches:
                     >= datetime.date.today()
                 ):
                     self.future_matches[date, hour, home_team] = away_team
+
+        print(f"Total matches added for the year: {matches_added}")
 
         # prevent making more than 12 requests per minute
         time.sleep(5)
@@ -190,6 +205,9 @@ class ExtractMatches:
             self.db.batch_insert(INSERT_PLAYED_GAMES, values)
             self.db.conn.commit()
         else:
+            # Ensure the directory exists
+            os.makedirs("archive", exist_ok=True)
+
             pd.DataFrame(
                 {
                     "date": self.matches.keys(),

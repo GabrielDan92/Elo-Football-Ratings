@@ -11,9 +11,9 @@ def process_league(league):
     simulation = LeagueSimulation(competition=league["comp"], misc_league=misc_league)
 
     try:
-        start_year, confidence = simulation.run_simulations(see_complete_logs=False)
+        start_year, confidence = simulation.run_simulations(see_complete_logs=True)
     except Exception as e:
-        print(f"Error: <{str(e)}> for competition: {league["comp"]}")
+        print(f"Error: <{str(e)}> for competition: {league['comp']}")
         return False
 
     # Calculate Elo ratings for played matches
@@ -43,9 +43,11 @@ def process_league(league):
 
 
 def main():
-    failed_leagues = [league["comp"] for league in leagues if not process_league(league)]
-    RichTable().see_predictions()
-    PostgreSQL().close_conn()
+    try:
+        failed_leagues = [league["comp"] for league in leagues if not process_league(league)]
+        RichTable().see_predictions()
+    finally:
+        PostgreSQL().close_conn()
 
     if failed_leagues:
         print(f"The following leagues failed to run: {failed_leagues}")

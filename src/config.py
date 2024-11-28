@@ -116,3 +116,16 @@ user_agents = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 17.1.2) AppleWebKit/800.6.25 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_18_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
 )
+
+
+'''
+docker-compose up --build
+docker-compose exec app /bin/bash
+python main.py
+docker ps -a
+docker rm ID
+docker system prune --volumes 
+docker-compose down
+docker-compose config | grep 'name'
+docker volume rm elo-football-ratings-main_postgres_data
+'''
