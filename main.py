@@ -11,7 +11,7 @@ def process_league(league):
     simulation = LeagueSimulation(competition=league["comp"], misc_league=misc_league)
 
     try:
-        start_year, confidence = simulation.run_simulations(see_complete_logs=True)
+        start_year, confidence = simulation.run_simulations(see_complete_logs=False)
     except Exception as e:
         print(f"Error: <{str(e)}> for competition: {league['comp']}")
         return False

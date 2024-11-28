@@ -69,7 +69,7 @@ class LeagueSimulation:
 
         # get ratings only for matches in the given period
         matches_in_period = self._filter_matches_by_period(start_year)
-        print(f"{len(matches_in_period)} matches in period: {start_year} - {self.years_range[-1]}")
+        # print(f"{len(matches_in_period)} matches in period: {start_year} - {self.years_range[-1]}")
 
         elo_ratings = EloRatings(matches=matches_in_period, confidence=confidence, misc_league=self.misc_league)
         return elo_ratings.get_win_perc()
